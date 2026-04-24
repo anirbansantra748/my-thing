@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Pinterest-inspired warm design system. All colors HSL. */
+
+@layer base {
+  :root {
+    /* Warm canvas */
+    --background: 60 20% 99%;
+    --foreground: 312 15% 13%; /* plum black #211922 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 312 15% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 312 15% 13%;
+
+    /* Pinterest Red */
+    --primary: 351 100% 45%; /* #e60023 */
+    --primary-foreground: 0 0% 0%;
+
+    /* Sand secondary */
+    --secondary: 60 7% 89%; /* #e5e5e0 */
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 60 8% 95%; /* warm fog */
+    --muted-foreground: 60 4% 38%; /* olive gray #62625b */
+
+    --accent: 60 8% 87%; /* warm light #e0e0d9 */
+    --accent-foreground: 312 15% 13%;
+
+    --destructive: 0 88% 33%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 60 4% 57%; /* warm silver #91918c */
+    --input: 60 4% 57%;
+    --ring: 230 73% 58%; /* focus blue #435ee5 */
+
+    --radius: 1rem; /* 16px */
+
+    /* Brand-specific */
+    --plum: 312 15% 13%;
+    --olive: 60 4% 38%;
+    --warm-silver: 60 4% 57%;
+    --sand: 60 7% 89%;
+    --warm-light: 60 8% 87%;
+    --warm-fog: 60 8% 96%;
+    --warm-wash: 60 20% 98%;
+    --dark-surface: 60 7% 19%; /* #33332e */
+    --link-blue: 226 67% 50%;
+    --recommendation: 293 60% 34%;
+    --performance: 263 43% 47%;
+
+    /* Sidebar */
+    --sidebar-background: 60 20% 99%;
+    --sidebar-foreground: 312 15% 13%;
+    --sidebar-primary: 351 100% 45%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 60 8% 95%;
+    --sidebar-accent-foreground: 312 15% 13%;
+    --sidebar-border: 60 7% 89%;
+    --sidebar-ring: 230 73% 58%;
+
+    /* Fonts */
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+    --font-hand: 'Caveat', cursive;
+
+    /* Radii scale */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.75rem;
+    --radius-3xl: 2.5rem;
+
+    /* Shadows */
+    --shadow-pin: 0 1px 2px hsl(60 4% 38% / 0.08);
+    --shadow-lift: 0 8px 24px -8px hsl(60 4% 25% / 0.18);
+    --shadow-pop: 0 12px 32px -12px hsl(351 100% 25% / 0.25);
+
+    /* Transitions */
+    --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 60 7% 10%;
+    --foreground: 60 8% 95%;
+    --card: 60 7% 14%;
+    --card-foreground: 60 8% 95%;
+    --popover: 60 7% 14%;
+    --popover-foreground: 60 8% 95%;
+    --primary: 351 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 60 7% 22%;
+    --secondary-foreground: 60 8% 95%;
+    --muted: 60 7% 17%;
+    --muted-foreground: 60 4% 65%;
+    --accent: 60 7% 22%;
+    --accent-foreground: 60 8% 95%;
+    --border: 60 7% 25%;
+    --input: 60 7% 25%;
+    --ring: 230 73% 65%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display); }
+  .font-hand { font-family: var(--font-hand); }
+  .font-body { font-family: var(--font-body); }
+
+  /* Paper textures via gradients */
+  .texture-paper {
+    background-color: hsl(var(--warm-wash));
+    background-image:
+      radial-gradient(hsl(60 10% 80% / 0.25) 1px, transparent 1px),
+      radial-gradient(hsl(60 10% 75% / 0.18) 1px, transparent 1px);
+    background-size: 18px 18px, 32px 32px;
+    background-position: 0 0, 9px 9px;
+  }
+  .texture-linen {
+    background-color: hsl(40 30% 96%);
+    background-image:
+      repeating-linear-gradient(45deg, hsl(40 20% 88% / 0.4) 0 1px, transparent 1px 6px),
+      repeating-linear-gradient(-45deg, hsl(40 20% 88% / 0.4) 0 1px, transparent 1px 6px);
+  }
+  .texture-grid {
+    background-color: hsl(var(--warm-fog));
+    background-image:
+      linear-gradient(hsl(60 6% 85%) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(60 6% 85%) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .texture-dots {
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(hsl(312 15% 13% / 0.12) 1.2px, transparent 1.2px);
+    background-size: 16px 16px;
+  }
+  .texture-warm {
+    background: linear-gradient(135deg, hsl(30 60% 95%) 0%, hsl(50 50% 94%) 100%);
+  }
+  .texture-blush {
+    background: linear-gradient(135deg, hsl(351 60% 96%) 0%, hsl(20 50% 94%) 100%);
+  }
+  .texture-sage {
+    background: linear-gradient(135deg, hsl(120 20% 94%) 0%, hsl(80 25% 92%) 100%);
+  }
+  .texture-sky {
+    background: linear-gradient(135deg, hsl(200 50% 95%) 0%, hsl(220 40% 94%) 100%);
+  }
+  .texture-noise {
+    background-color: hsl(var(--warm-wash));
+    background-image:
+      radial-gradient(hsl(40 20% 70% / 0.15) 0.8px, transparent 0.8px),
+      radial-gradient(hsl(40 20% 60% / 0.1) 0.8px, transparent 0.8px);
+    background-size: 6px 6px, 11px 11px;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .pin-shadow { box-shadow: var(--shadow-pin); }
+  .lift-shadow { box-shadow: var(--shadow-lift); }
+  .pop-shadow { box-shadow: var(--shadow-pop); }
+}
