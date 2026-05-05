@@ -52,14 +52,16 @@ export const InteractiveMenu: React.FC = () => {
 
   useEffect(() => {
     const checkDialog = () => {
-      // Radix UI (shadcn) adds 'data-state="open"' to body or 'pointer-events: none'
-      // but also a div with 'role="dialog"' exists.
-      const hasDialog = !!document.querySelector('[role="dialog"], [data-state="open"]');
-      setIsHidden(hasDialog);
+      const hasDialog = !!document.querySelector('[role="dialog"], [role="alertdialog"], [data-state="open"]');
+      const isLocked = document.body.style.pointerEvents === 'none' || document.body.classList.contains('overflow-hidden');
+      setIsHidden(hasDialog || isLocked);
     };
 
     const observer = new MutationObserver(checkDialog);
     observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    
+    // Check initially
+    checkDialog();
     
     return () => observer.disconnect();
   }, []);
@@ -67,7 +69,7 @@ export const InteractiveMenu: React.FC = () => {
   if (isHidden) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] md:hidden px-4 pb-6 pt-2 bg-gradient-to-t from-background via-background/95 to-transparent backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 pb-6 pt-2 bg-gradient-to-t from-background via-background/95 to-transparent backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="menu max-w-lg mx-auto flex items-center justify-between bg-card/90 backdrop-blur-xl border border-sand rounded-3xl p-1.5 shadow-2xl">
         {menuItems.map((item, index) => {
           const isActive = index === activeIndex;
