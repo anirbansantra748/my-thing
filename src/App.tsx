@@ -11,6 +11,9 @@ import Drawings from "./pages/Drawings";
 import Journal from "./pages/Journal";
 import Movies from "./pages/Movies";
 import Books from "./pages/Books";
+import Sketch from "./pages/Sketch";
+import Songs from "./pages/Songs";
+import Scrapbook from "./pages/Scrapbook";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +25,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/sketches/:id" element={<Sketch />} />
           <Route element={<Layout />}>
             <Route path="/poems" element={<Poems />} />
             <Route path="/poems/:id" element={<Poems />} />
@@ -30,6 +34,9 @@ const App = () => (
             <Route path="/journal" element={<Journal />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/books" element={<Books />} />
+            <Route path="/sketches" element={<Sketch />} />
+            <Route path="/songs" element={<Songs />} />
+            <Route path="/scrapbook" element={<Scrapbook />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

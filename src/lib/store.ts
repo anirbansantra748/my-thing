@@ -25,6 +25,7 @@ export type CanvasItem = {
   // shape
   shape?: "circle" | "square" | "blob";
   fill?: string;
+  cornerRadius?: number;
 };
 
 export type CanvasDoc = {
@@ -59,6 +60,17 @@ export type MovieEntry = {
   updatedAt: number;
 };
 
+export type SketchDoc = {
+  id: string;
+  title: string;
+  elements: any[];
+  appState: any;
+  files?: any;
+  cover?: string; // dataURL preview
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type BookEntry = {
   id: string;
   title: string;
@@ -73,17 +85,52 @@ export type BookEntry = {
   updatedAt: number;
 };
 
+export type SongEntry = {
+  id: string;
+  title: string;
+  artist: string;
+  url: string;
+  cover?: string;
+  notes?: string;
+  rating?: number;
+  albumId?: string; // Reference to AlbumEntry
+  genre?: string;
+  mood?: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type AlbumEntry = {
+  id: string;
+  title: string;
+  description?: string;
+  cover?: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
 const KEY = "muse:store:v1";
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "/api";
 
 type Store = {
   canvases: CanvasDoc[];
   journal: JournalEntry[];
   movies: MovieEntry[];
   books: BookEntry[];
+  sketches: SketchDoc[];
+  songs: SongEntry[];
+  albums: AlbumEntry[];
 };
 
-const empty: Store = { canvases: [], journal: [], movies: [], books: [] };
+const empty: Store = { 
+  canvases: [], 
+  journal: [], 
+  movies: [], 
+  books: [], 
+  sketches: [], 
+  songs: [], 
+  albums: [] 
+};
 
 function read(): Store {
   if (typeof window === "undefined") return empty;

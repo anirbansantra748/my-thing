@@ -2,24 +2,20 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-dotenv.config({ path: '../.env' });
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
+}
 
 // Schemas
 const CanvasSchema = new mongoose.Schema({
@@ -94,12 +90,12 @@ const SongSchema = new mongoose.Schema({
   updatedAt: Number
 });
 
-const Canvas = mongoose.model('Canvas', CanvasSchema);
-const Journal = mongoose.model('Journal', JournalSchema);
-const Movie = mongoose.model('Movie', MovieSchema);
-const Book = mongoose.model('Book', BookSchema);
-const Sketch = mongoose.model('Sketch', SketchSchema);
-const Song = mongoose.model('Song', SongSchema);
+const Canvas = mongoose.models.Canvas || mongoose.model('Canvas', CanvasSchema);
+const Journal = mongoose.models.Journal || mongoose.model('Journal', JournalSchema);
+const Movie = mongoose.models.Movie || mongoose.model('Movie', MovieSchema);
+const Book = mongoose.models.Book || mongoose.model('Book', BookSchema);
+const Sketch = mongoose.models.Sketch || mongoose.model('Sketch', SketchSchema);
+const Song = mongoose.models.Song || mongoose.model('Song', SongSchema);
 
 // Helper to handle generic CRUD
 const setupCRUD = (route, Model, idField = 'id') => {
@@ -143,6 +139,4 @@ setupCRUD('books', Book);
 setupCRUD('sketches', Sketch);
 setupCRUD('songs', Song);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+export default app;

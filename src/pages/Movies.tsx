@@ -32,18 +32,18 @@ export default function Movies() {
   const remove = (id: string) => { setMovies(movies.filter((m) => m.id !== id)); setOpen(null); };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 py-10">
-      <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
+    <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
+      <div className="flex items-end justify-between flex-wrap gap-4 mb-6 md:mb-8">
         <div>
-          <p className="text-sm uppercase tracking-widest text-olive mb-2">Reels & ratings</p>
-          <h1 className="font-display text-5xl md:text-6xl font-bold text-plum">Movies</h1>
+          <p className="text-xs md:text-sm uppercase tracking-widest text-olive mb-1 md:mb-2">Reels & ratings</p>
+          <h1 className="font-display text-4xl md:text-6xl font-bold text-plum">Movies</h1>
         </div>
-        <Button onClick={startNew} className="rounded-full h-11 px-5 bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={startNew} className="rounded-full h-11 px-5 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-1.5" /> Add movie
         </Button>
       </div>
 
-      <div className="flex gap-2 mb-8 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 mb-6 md:mb-8 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {(["all", ...STATUSES] as const).map((s) => (
           <button key={s} onClick={() => setFilter(s)}
                   className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap ${
@@ -57,7 +57,7 @@ export default function Movies() {
       {filtered.length === 0 ? (
         <Empty onAdd={startNew} icon={<Film className="w-8 h-8 text-olive" />} label="No movies yet" />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5">
           {filtered.map((m) => (
             <button key={m.id} onClick={() => setOpen(m)}
                     className="group text-left rounded-2xl overflow-hidden bg-card border border-sand pin-shadow hover:lift-shadow transition-shadow">
