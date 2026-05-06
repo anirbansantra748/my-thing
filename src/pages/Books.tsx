@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStore, uid, BookEntry } from "@/lib/store";
+import { useStore, uid, BookEntry, getAuth } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,10 +33,14 @@ export default function Books() {
       return b.updatedAt - a.updatedAt;
     });
 
-  const startNew = () => setOpen({
-    id: uid(), title: "", author: "", pagesRead: 0, totalPages: 300, rating: 0,
-    status: "reading", notes: "", createdAt: Date.now(), updatedAt: Date.now(),
-  });
+  const startNew = () => {
+    const user = getAuth();
+    if (!user) return;
+    setOpen({
+      id: uid(), userId: user.id, title: "", author: "", pagesRead: 0, totalPages: 300, rating: 0,
+      status: "reading", notes: "", createdAt: Date.now(), updatedAt: Date.now(),
+    });
+  };
 
   const save = (b: BookEntry) => {
     if (!b.title.trim()) return;
@@ -157,6 +161,15 @@ function BookDialog({ entry, onClose, onSave, onDelete }: {
         <div className="space-y-3">
           <Input placeholder="Title" value={b.title} onChange={(e) => setB({ ...b, title: e.target.value })}
                  className="font-display text-2xl border-0 bg-warm-fog rounded-2xl h-14 px-4" />
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase tracking-widest text-olive ml-1 font-bold">Cover URL (optional)</label>
+            <Input 
+              placeholder="Paste image link here..." 
+              value={b.cover && !b.cover.startsWith('data:') ? b.cover : ""} 
+              onChange={(e) => setB({ ...b, cover: e.target.value })}
+              className="rounded-full bg-warm-fog border-0 h-9 text-xs"
+            />
+          </div>
           <Input placeholder="Author" value={b.author || ""} onChange={(e) => setB({ ...b, author: e.target.value })}
                  className="rounded-full bg-warm-fog border-0" />
           <div className="flex flex-wrap gap-2">

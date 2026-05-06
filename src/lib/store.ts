@@ -51,16 +51,95 @@ type Store = {
 
 const empty: Store = { canvases: [], journal: [], movies: [], books: [], sketches: [], songs: [], albums: [] };
 
-function read(): Store {
-  if (typeof window === "undefined") return empty;
+// Memory cache for synchronous access
+let memoryStore: Store = empty;
+let isInitialized = false;
+
+// IndexedDB Helper
+const DB_NAME = "muse_studio_db";
+const STORE_NAME = "store";
+
+function getDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(STORE_NAME)) {
+        request.result.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function idbGet(key: string): Promise<any> {
+  try {
+    const db = await getDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const request = tx.objectStore(STORE_NAME).get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    });
+  } catch { return null; }
+}
+
+async function idbSet(key: string, val: any): Promise<void> {
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const request = tx.objectStore(STORE_NAME).put(val, key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) { console.error("IDB Write Error:", err); }
+}
+
+// Migration and Init
+if (typeof window !== "undefined") {
+  // Try to load initial data from localStorage for immediate first paint
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...empty, ...JSON.parse(raw) } : empty;
-  } catch { return empty; }
+    if (raw) memoryStore = { ...empty, ...JSON.parse(raw) };
+  } catch {}
+
+  // Async load from IDB (The real source of truth)
+  idbGet(KEY).then(async (cached) => {
+    if (cached) {
+      memoryStore = { ...empty, ...cached };
+    } else if (localStorage.getItem(KEY)) {
+      // Migrate from LS to IDB if IDB is empty
+      await idbSet(KEY, memoryStore);
+    }
+    isInitialized = true;
+    window.dispatchEvent(new CustomEvent("muse:update"));
+  });
+}
+
+function read(): Store {
+  return memoryStore;
 }
 
 function write(s: Store) {
-  localStorage.setItem(KEY, JSON.stringify(s));
+  memoryStore = s;
+  // Background save to IDB
+  idbSet(KEY, s);
+  
+  // Still try to save small metadata to localStorage for instant boot, but catch quota errors
+  try {
+    // @ts-ignore - cleaning heavy fields for LS to prevent quota errors
+    const light = { ...s };
+    if (light.canvases) light.canvases = s.canvases.map(c => ({ ...c, items: [] })); 
+    if (light.sketches) light.sketches = s.sketches.map(sk => ({ ...sk, elements: [] }));
+    if (light.movies) light.movies = s.movies.map(m => ({ ...m, cover: "" }));
+    if (light.books) light.books = s.books.map(b => ({ ...b, cover: "" }));
+    if (light.songs) light.songs = s.songs.map(so => ({ ...so, cover: "" }));
+    localStorage.setItem(KEY, JSON.stringify(light));
+  } catch (e) {
+    // If it fails, we don't care, IDB has it.
+  }
+  
   window.dispatchEvent(new CustomEvent("muse:update"));
 }
 

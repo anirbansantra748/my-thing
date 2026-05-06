@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStore, uid, MovieEntry } from "@/lib/store";
+import { useStore, uid, MovieEntry, getAuth } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,10 +27,14 @@ export default function Movies() {
       return b.updatedAt - a.updatedAt;
     });
 
-  const startNew = () => setOpen({
-    id: uid(), title: "", year: "", rating: 0, status: "watched", notes: "",
-    createdAt: Date.now(), updatedAt: Date.now(),
-  });
+  const startNew = () => {
+    const user = getAuth();
+    if (!user) return;
+    setOpen({
+      id: uid(), userId: user.id, title: "", year: "", rating: 0, status: "watched", notes: "",
+      createdAt: Date.now(), updatedAt: Date.now(),
+    });
+  };
 
   const save = (m: MovieEntry) => {
     if (!m.title.trim()) return;
@@ -139,6 +143,15 @@ function MovieDialog({ entry, onClose, onSave, onDelete }: {
         <div className="space-y-3">
           <Input placeholder="Title" value={m.title} onChange={(e) => setM({ ...m, title: e.target.value })}
                  className="font-display text-2xl border-0 bg-warm-fog rounded-2xl h-14 px-4" />
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase tracking-widest text-olive ml-1 font-bold">Cover URL (optional)</label>
+            <Input 
+              placeholder="Paste image link here..." 
+              value={m.cover && !m.cover.startsWith('data:') ? m.cover : ""} 
+              onChange={(e) => setM({ ...m, cover: e.target.value })}
+              className="rounded-full bg-warm-fog border-0 h-9 text-xs"
+            />
+          </div>
           <Input placeholder="Year" value={m.year || ""} onChange={(e) => setM({ ...m, year: e.target.value })}
                  className="rounded-full bg-warm-fog border-0" />
           <div className="flex flex-wrap gap-2">
