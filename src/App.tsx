@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { CommandPalette } from "@/components/CommandPalette";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Layout from "./components/Layout";
@@ -17,29 +19,39 @@ import Scrapbook from "./pages/Scrapbook";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Index />} />
+        <Route path="/sketches/:id" element={<Sketch />} />
+        <Route element={<Layout />}>
+          <Route path="/poems" element={<Poems />} />
+          <Route path="/poems/:id" element={<Poems />} />
+          <Route path="/drawings" element={<Drawings />} />
+          <Route path="/drawings/:id" element={<Drawings />} />
+          <Route path="/journal" element={<Journal />} />
+          <Route path="/movies" element={<Movies />} />
+          <Route path="/books" element={<Books />} />
+          <Route path="/sketches" element={<Sketch />} />
+          <Route path="/songs" element={<Songs />} />
+          <Route path="/scrapbook" element={<Scrapbook />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/sketches/:id" element={<Sketch />} />
-          <Route element={<Layout />}>
-            <Route path="/poems" element={<Poems />} />
-            <Route path="/poems/:id" element={<Poems />} />
-            <Route path="/drawings" element={<Drawings />} />
-            <Route path="/drawings/:id" element={<Drawings />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/movies" element={<Movies />} />
-            <Route path="/books" element={<Books />} />
-            <Route path="/sketches" element={<Sketch />} />
-            <Route path="/songs" element={<Songs />} />
-            <Route path="/scrapbook" element={<Scrapbook />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <CommandPalette />
+        <AnimatedRoutes />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

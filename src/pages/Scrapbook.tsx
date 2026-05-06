@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
+import { PageTransition } from "@/components/PageTransition";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -30,6 +31,7 @@ export default function Scrapbook() {
   const [format, setFormat] = useState<"4-5" | "1-1">("4-5");
   const [mode, setMode] = useState<"mixed" | "music" | "books" | "movies">("mixed");
   const [period, setPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [theme, setTheme] = useState<"warm" | "midnight" | "minimalist">("warm");
   
   const scrapbookRef = useRef<HTMLDivElement>(null);
   const selectedMonth = date.getMonth();
@@ -90,7 +92,7 @@ export default function Scrapbook() {
       const canvas = await html2canvas(scrapbookRef.current, {
         scale: 2,
         useCORS: true,
-        backgroundColor: mode === 'music' ? '#1DB954' : '#FFFFFF',
+        backgroundColor: theme === 'midnight' ? '#000000' : '#FFFFFF',
         logging: false,
         width: scrapbookRef.current.offsetWidth,
         height: scrapbookRef.current.scrollHeight,
@@ -129,7 +131,8 @@ export default function Scrapbook() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F5F2] pb-40 overflow-x-hidden">
+    <PageTransition>
+      <div className="min-h-screen bg-[#F8F5F2] pb-40 overflow-x-hidden">
       {/* Controls Bar */}
       <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-2xl border-b border-black/5 px-6 py-4 shadow-sm">
         <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
@@ -173,7 +176,7 @@ export default function Scrapbook() {
                 ))}
              </div>
 
-             <div className="flex items-center bg-black/5 rounded-[2rem] p-1">
+              <div className="flex items-center bg-black/5 rounded-[2rem] p-1">
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -186,6 +189,18 @@ export default function Scrapbook() {
                   onClick={() => setFormat("1-1")}
                   className={`rounded-full px-5 h-9 text-[10px] font-black uppercase tracking-wider transition-all ${format === "1-1" ? "bg-white text-plum shadow-md" : "text-olive/40"}`}
                 >1:1</Button>
+             </div>
+
+             <div className="flex items-center bg-black/5 rounded-[2rem] p-1">
+                {(["warm", "midnight", "minimalist"] as const).map(t => (
+                   <Button 
+                    key={t}
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setTheme(t)}
+                    className={`rounded-full px-4 h-9 text-[10px] font-black uppercase tracking-wider transition-all capitalize ${theme === t ? "bg-white text-plum shadow-md" : "text-olive/40"}`}
+                   >{t}</Button>
+                ))}
              </div>
           </div>
 
@@ -204,9 +219,12 @@ export default function Scrapbook() {
         {totalItems > 0 ? (
           <div 
             ref={scrapbookRef}
-            className={`relative overflow-hidden bg-white shadow-[0_80px_160px_rgba(0,0,0,0.12)] rounded-[4rem] p-16 md:p-24 texture-paper transition-all duration-700 scrapbook-container
+            className={`relative overflow-hidden shadow-[0_80px_160px_rgba(0,0,0,0.12)] rounded-[4rem] p-16 md:p-24 transition-all duration-700 scrapbook-container
               ${format === "4-5" ? "w-full max-w-[800px] min-h-[1000px]" : "w-full max-w-[800px] aspect-square"}
-              ${mode === 'music' ? 'bg-[#1DB954] !text-white' : ''}
+              ${theme === 'warm' ? 'bg-white texture-paper' : ''}
+              ${theme === 'midnight' ? 'bg-black !text-white' : ''}
+              ${theme === 'minimalist' ? 'bg-[#FAFAFA]' : ''}
+              ${mode === 'music' && theme === 'warm' ? 'bg-[#1DB954] !text-white' : ''}
             `}
           >
             {/* Background Texture Logic */}
@@ -217,12 +235,12 @@ export default function Scrapbook() {
             <div className="relative z-20 mb-20">
                <div className="flex items-end justify-between">
                   <div>
-                    <p className={`text-[11px] font-black uppercase tracking-[0.5em] mb-3 ${mode === 'music' ? 'text-white/60' : 'text-primary'}`}>
+                    <p className={`text-[11px] font-black uppercase tracking-[0.5em] mb-3 ${theme === 'midnight' ? 'text-white/40' : mode === 'music' && theme === 'warm' ? 'text-white/60' : 'text-primary'}`}>
                       {period === 'monthly' ? 'Monthly Digest' : 'The Annual Review'}
                     </p>
-                    <h1 className={`font-display text-6xl md:text-8xl font-black tracking-tighter leading-[0.75] ${mode === 'music' ? 'text-white' : 'text-plum'}`}>
+                    <h1 className={`font-display text-6xl md:text-8xl font-black tracking-tighter leading-[0.75] ${theme === 'midnight' ? 'text-white' : mode === 'music' && theme === 'warm' ? 'text-white' : 'text-plum'}`}>
                         {period === 'monthly' ? MONTHS[selectedMonth] : selectedYear}<br/>
-                        <span className={`text-[0.4em] tracking-normal ${mode === 'music' ? 'text-white/20' : 'text-olive/10'}`}>
+                        <span className={`text-[0.4em] tracking-normal ${theme === 'midnight' ? 'text-white/10' : mode === 'music' && theme === 'warm' ? 'text-white/20' : 'text-olive/10'}`}>
                            {period === 'monthly' ? selectedYear : 'Archive Edition'}
                         </span>
                     </h1>
@@ -354,5 +372,6 @@ export default function Scrapbook() {
         }
       `}} />
     </div>
+    </PageTransition>
   );
 }

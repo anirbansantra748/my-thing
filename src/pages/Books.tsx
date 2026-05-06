@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { StarRating } from "@/components/StarRating";
-import { Plus, BookOpen, Image as ImageIcon } from "lucide-react";
+import { Plus, X, BookOpen, Image as ImageIcon, Search, ArrowUpDown } from "lucide-react";
 import { Dialog, Empty } from "./Movies";
 
 const STATUSES: BookEntry["status"][] = ["reading", "finished", "to-read"];
@@ -13,10 +13,25 @@ export default function Books() {
   const [books, setBooks] = useStore("books");
   const [open, setOpen] = useState<BookEntry | null>(null);
   const [filter, setFilter] = useState<"all" | BookEntry["status"]>("all");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"updated" | "rating" | "progress">("updated");
 
   const filtered = books
-    .filter((b) => filter === "all" || b.status === filter)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .filter((b) => {
+      const matchFilter = filter === "all" || b.status === filter;
+      const matchSearch = b.title.toLowerCase().includes(search.toLowerCase()) || 
+                          (b.author || "").toLowerCase().includes(search.toLowerCase());
+      return matchFilter && matchSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "progress") {
+        const pctA = a.totalPages > 0 ? (a.pagesRead / a.totalPages) : 0;
+        const pctB = b.totalPages > 0 ? (b.pagesRead / b.totalPages) : 0;
+        return pctB - pctA;
+      }
+      return b.updatedAt - a.updatedAt;
+    });
 
   const startNew = () => setOpen({
     id: uid(), title: "", author: "", pagesRead: 0, totalPages: 300, rating: 0,
@@ -43,15 +58,40 @@ export default function Books() {
         </Button>
       </div>
 
-      <div className="flex gap-2 mb-6 md:mb-8 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        {(["all", ...STATUSES] as const).map((s) => (
-          <button key={s} onClick={() => setFilter(s)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap ${
-                    filter === s ? "bg-plum text-background" : "bg-sand text-plum hover:bg-warm-light"
-                  }`}>
-            {s.replace("-", " ")}
-          </button>
-        ))}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+          {(["all", ...STATUSES] as const).map((s) => (
+            <button key={s} onClick={() => setFilter(s)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-all ${
+                      filter === s ? "bg-plum text-background" : "bg-sand text-plum hover:bg-warm-light"
+                    }`}>
+              {s.replace("-", " ")}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 shrink-0">
+          <div className="relative group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-olive/40 group-focus-within:text-primary transition-colors" />
+            <Input 
+              placeholder="Search library..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 pr-4 rounded-full bg-sand/50 border-0 w-full md:w-64 h-10 text-sm focus-visible:ring-primary/20"
+            />
+          </div>
+          
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="bg-sand/50 border-0 rounded-full px-4 h-10 text-xs font-bold text-plum outline-none cursor-pointer hover:bg-sand transition-colors appearance-none pr-8 relative"
+            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\' /%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '12px' }}
+          >
+            <option value="updated">Recently Read</option>
+            <option value="rating">Top Rated</option>
+            <option value="progress">Completion</option>
+          </select>
+        </div>
       </div>
 
       {filtered.length === 0 ? (

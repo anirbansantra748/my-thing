@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog } from "@/components/ui/dialog";
+import { Dialog, Empty } from "./Movies";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 
@@ -30,6 +30,9 @@ export default function Songs() {
   const [editingAlbum, setEditingAlbum] = useState<AlbumEntry | null>(null);
   const [playing, setPlaying] = useState<SongEntry | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [lyrics, setLyrics] = useState<string | null>(null);
+  const [isLyricsLoading, setIsLyricsLoading] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -62,7 +65,7 @@ export default function Songs() {
           const dur = playerRef.current.getDuration();
           if (dur > 0) setDuration(dur);
         }
-      }, 1000);
+      }, 200);
     } else {
       if (progressInterval.current) clearInterval(progressInterval.current);
     }
@@ -82,6 +85,30 @@ export default function Songs() {
     }
     setPlaying(albumSongs[nextIndex]);
   };
+
+  // Fetch Lyrics
+  useEffect(() => {
+    if (playing && showLyrics) {
+      const fetchLyrics = async () => {
+        setIsLyricsLoading(true);
+        setLyrics(null);
+        try {
+          const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(playing.artist)}/${encodeURIComponent(playing.title)}`);
+          const data = await res.json();
+          if (data.lyrics) {
+            setLyrics(data.lyrics);
+          } else {
+            setLyrics("Lyrics not found for this track.");
+          }
+        } catch (err) {
+          setLyrics("Could not connect to lyrics server.");
+        } finally {
+          setIsLyricsLoading(false);
+        }
+      };
+      fetchLyrics();
+    }
+  }, [playing?.id, showLyrics]);
 
   const playPrev = () => {
     if (albumSongs.length === 0) return;
@@ -103,6 +130,10 @@ export default function Songs() {
     const ytId = getYouTubeId(playing.url);
     if (!ytId) return;
 
+    // Reset progress for the new song
+    setCurrentTime(0);
+    setDuration(0);
+
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = "https://www.youtube.com/iframe_api";
@@ -114,7 +145,22 @@ export default function Songs() {
       if (!window.YT || !window.YT.Player) return;
 
       const targetId = isExpanded ? 'yt-player-expanded' : 'yt-player';
-      if (!document.getElementById(targetId)) return;
+      const container = document.getElementById(targetId);
+      if (!container) return;
+
+      // REUSE PLAYER: If player exists and is in the correct container, just load new video
+      // This is CRITICAL for background play on mobile
+      if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+        const iframe = playerRef.current.getIframe();
+        if (iframe && (iframe.id === targetId || iframe.parentElement?.id === targetId)) {
+          playerRef.current.loadVideoById({
+            videoId: ytId,
+            startSeconds: 0,
+            suggestedQuality: quality
+          });
+          return;
+        }
+      }
 
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch (e) { }
@@ -693,7 +739,7 @@ export default function Songs() {
                     <span className="text-[9px] md:text-[10px] font-black text-white/20 tabular-nums w-8 md:w-10 text-right">{formatTime(currentTime)}</span>
                     <div className="flex-1 relative h-6 group/scrub flex items-center">
                       <div className="absolute inset-x-0 h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-red-500 via-red-600 to-red-500 shadow-[0_0_25px_rgba(239,68,68,0.5)] transition-all duration-300 animate-pulse"
+                        <div className="h-full bg-gradient-to-r from-red-500 via-red-600 to-red-500 shadow-[0_0_25px_rgba(239,68,68,0.3)]"
                           style={{ width: `${(currentTime / (duration || 1)) * 100}%` }} />
                       </div>
                       <Slider
@@ -753,6 +799,22 @@ export default function Songs() {
               <div className="rounded-[3rem] overflow-hidden bg-black/40 border border-white/5 aspect-video w-full max-w-2xl mx-auto relative group">
                 <div id="yt-player-expanded" className="w-full h-full" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                
+                {/* Visualizer Overlay */}
+                {isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center gap-1.5 opacity-20 pointer-events-none">
+                    {[...Array(12)].map((_, i) => (
+                      <div key={i} 
+                           className="w-1.5 bg-white rounded-full animate-visualizer" 
+                           style={{ 
+                             height: '40px', 
+                             animationDelay: `${i * 0.1}s`,
+                             animationDuration: `${0.5 + Math.random()}s`
+                           }} />
+                    ))}
+                  </div>
+                )}
+
                 <div className="absolute bottom-6 left-6 flex items-center gap-4">
                   <div className="bg-black/60 backdrop-blur-xl px-4 py-2 rounded-2xl text-[10px] font-black text-white flex items-center gap-3 border border-white/10">
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -762,18 +824,25 @@ export default function Songs() {
               </div>
             </div>
 
-            {/* Right Column: Controls & Extra Info */}
+{/* Right Column: Controls & Extra Info */}
             <div className="relative z-[205] w-full md:w-[400px] flex flex-col gap-10 pt-12 md:pt-0">
                
                {/* Controls Dashboard */}
                <div className="bg-white/5 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/10 space-y-12">
-                  <div className="flex items-center justify-between">
-                    <Button variant="ghost" size="icon" onClick={() => setIsShuffle(!isShuffle)} className={isShuffle ? 'text-plum' : 'text-white/20'}>
-                      <Shuffle className="w-6 h-6" />
+                   <div className="flex items-center justify-between">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setShowLyrics(!showLyrics)} 
+                      className={`w-12 h-12 rounded-2xl transition-all ${showLyrics ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-white/20 hover:text-white'}`}
+                    >
+                      <Mic2 className="w-6 h-6" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-white/20 hover:text-white transition-colors">
-                      <ListMusic className="w-6 h-6" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => setIsShuffle(!isShuffle)} className={isShuffle ? 'text-plum' : 'text-white/20'}>
+                        <Shuffle className="w-6 h-6" />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="flex flex-col items-center gap-8">
@@ -798,29 +867,51 @@ export default function Songs() {
                           value={[currentTime]} 
                           max={duration || 100} 
                           step={0.1} 
-                          onValueChange={handleSeek} 
+                          onValueChange={handleSeek}
                           onValueCommit={commitSeek}
-                          className="w-full"
+                          className="w-full cursor-pointer player-slider-dark"
                         />
                      </div>
                   </div>
 
-                  {/* Quality Selector */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-white/40 font-black text-[10px] uppercase tracking-widest">
-                       <Settings className="w-3 h-3" /> Playback Assurance
+                  {/* Lyrics Display */}
+                  <div className={`transition-all duration-700 overflow-hidden ${showLyrics ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="space-y-6 text-center md:text-left pt-6 border-t border-white/5">
+                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Lyrics Mode</p>
+                       <div className="space-y-4 font-display text-xl md:text-2xl font-bold text-white/60">
+                          {isLyricsLoading ? (
+                            <p className="animate-pulse">Fetching lyrics from studio...</p>
+                          ) : lyrics ? (
+                            <div className="whitespace-pre-line text-white leading-relaxed max-h-[400px] overflow-y-auto pr-4 scrollbar-hide">
+                              {lyrics}
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-white">Looking for the right words...</p>
+                              <p>Connecting to studio master...</p>
+                              <p>Lyrics will appear as the track progresses.</p>
+                            </>
+                          )}
+                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                       {['tiny', 'small', 'medium', 'hd720'].map((q) => (
-                         <Button
-                           key={q}
-                           onClick={() => changeQuality(q)}
-                           className={`rounded-2xl h-11 text-[10px] font-black uppercase tracking-wider transition-all ${quality === q ? 'bg-plum text-white shadow-lg' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
-                         >
-                           {q === 'tiny' ? 'Low Data' : q === 'small' ? 'Normal' : q === 'medium' ? 'High' : 'Ultra HD'}
-                         </Button>
-                       ))}
-                    </div>
+                  </div>
+               </div>
+
+               {/* Quality Selection Dashboard */}
+               <div className="bg-white/5 backdrop-blur-3xl rounded-[3rem] p-8 border border-white/10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-6">Playback Assurance</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['tiny', 'small', 'medium', 'large', 'hd720'].map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => changeQuality(q)}
+                        className={`h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          quality === q ? 'bg-white text-black' : 'bg-white/5 text-white/40 hover:bg-white/10'
+                        }`}
+                      >
+                        {q === 'hd720' ? '720p HD' : q === 'tiny' ? '144p' : q}
+                      </button>
+                    ))}
                   </div>
                </div>
 

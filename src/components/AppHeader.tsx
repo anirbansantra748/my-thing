@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sparkles, Menu, X } from "lucide-react";
+import { Sparkles, Menu, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { exportStore } from "@/lib/store";
 
 const links = [
   { to: "/", label: "Home" },
@@ -48,6 +49,16 @@ export function AppHeader() {
               </Link>
             );
           })}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={exportStore}
+            className="ml-2 gap-2 text-olive/40 hover:text-plum hover:bg-sand rounded-full px-4"
+            title="Backup Studio Data"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden lg:inline">Backup</span>
+          </Button>
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -84,6 +95,13 @@ export function AppHeader() {
                 </Link>
               );
             })}
+            <Button 
+              variant="outline" 
+              onClick={() => { exportStore(); setIsOpen(false); }}
+              className="mt-4 gap-3 rounded-2xl border-sand text-plum font-bold h-14 px-8 w-full max-w-[280px]"
+            >
+              <Download className="w-5 h-5" /> Backup Studio
+            </Button>
           </nav>
         </div>
       </div>

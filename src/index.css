@@ -230,4 +230,14 @@
   .menu__item.active .menu__icon .icon {
     @apply scale-110 rotate-3;
   }
+
+  @keyframes visualizer {
+    0%, 100% { transform: scaleY(0.5); }
+    50% { transform: scaleY(1.5); }
+  }
+
+  .animate-visualizer {
+    animation: visualizer 0.5s ease-in-out infinite;
+    transform-origin: center;
+  }
 }

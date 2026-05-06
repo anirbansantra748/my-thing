@@ -228,4 +228,15 @@ export function useStore<K extends keyof Store>(key: K): [Store[K], (v: Store[K]
   return [val, set];
 }
 
+export function exportStore() {
+  const data = read();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `warm-canvas-studio-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);

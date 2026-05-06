@@ -87,9 +87,18 @@ const SongSchema = new mongoose.Schema({
   cover: String,
   notes: String,
   rating: Number,
-  album: String,
+  albumId: String,
   genre: String,
   mood: String,
+  createdAt: Number,
+  updatedAt: Number
+});
+
+const AlbumSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true },
+  title: String,
+  description: String,
+  cover: String,
   createdAt: Number,
   updatedAt: Number
 });
@@ -100,6 +109,7 @@ const Movie = mongoose.model('Movie', MovieSchema);
 const Book = mongoose.model('Book', BookSchema);
 const Sketch = mongoose.model('Sketch', SketchSchema);
 const Song = mongoose.model('Song', SongSchema);
+const Album = mongoose.model('Album', AlbumSchema);
 
 // Helper to handle generic CRUD
 const setupCRUD = (route, Model, idField = 'id') => {
@@ -142,6 +152,7 @@ setupCRUD('movies', Movie);
 setupCRUD('books', Book);
 setupCRUD('sketches', Sketch);
 setupCRUD('songs', Song);
+setupCRUD('albums', Album);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

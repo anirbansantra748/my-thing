@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { PageTransition } from "@/components/PageTransition";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MOODS = ["✨","🌸","☀️","🌧️","🌙","🔥","💭","🍃","❤️","☕"];
@@ -26,6 +27,18 @@ export default function Journal() {
     return m;
   }, [entries]);
 
+  const moodCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    entries.forEach(e => {
+      if (e.mood && e.date.startsWith(year.toString())) {
+        counts[e.mood] = (counts[e.mood] || 0) + 1;
+      }
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [entries, year]);
+
+  const totalJournaled = entries.filter(e => e.date.startsWith(year.toString())).length;
+
   const open = openDate ? entryMap.get(openDate) : null;
   const today = new Date();
 
@@ -39,7 +52,8 @@ export default function Journal() {
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-32">
+    <PageTransition>
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-32">
       <div className="flex items-end justify-between flex-wrap gap-4 mb-8 md:mb-12">
         <div className="animate-in fade-in slide-in-from-left duration-700">
           <p className="text-xs md:text-sm uppercase tracking-widest text-olive mb-1 md:mb-2 font-bold">A year, day by day</p>
@@ -53,6 +67,54 @@ export default function Journal() {
           <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9 md:h-10 md:w-10 hover:bg-sand" onClick={() => setYear(year + 1)}>
             <ChevronRight className="w-5 h-5" />
           </Button>
+        </div>
+      </div>
+
+      {/* Mood Analytics Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="bg-card/40 backdrop-blur-md rounded-3xl border border-sand p-6 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-olive/40 mb-4">Yearly Progress</p>
+          <div className="flex items-end gap-3">
+             <span className="text-5xl font-display font-black text-plum">{totalJournaled}</span>
+             <span className="text-sm font-bold text-olive mb-1.5">days journaled</span>
+          </div>
+          <div className="mt-4 h-1.5 w-full bg-sand rounded-full overflow-hidden">
+             <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${Math.min(100, (totalJournaled / 365) * 100)}%` }} />
+          </div>
+        </div>
+
+        <div className="md:col-span-2 bg-card/40 backdrop-blur-md rounded-3xl border border-sand p-6 shadow-sm flex flex-col md:flex-row gap-8">
+          <div className="flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-olive/40 mb-4">Top Moods</p>
+            <div className="flex gap-4 items-center">
+              {moodCounts.slice(0, 3).map(([mood, count]) => (
+                <div key={mood} className="flex flex-col items-center gap-1">
+                  <div className="w-14 h-14 rounded-2xl bg-white/50 flex items-center justify-center text-3xl shadow-sm">
+                    {mood}
+                  </div>
+                  <span className="text-[10px] font-black text-plum/60">{count}x</span>
+                </div>
+              ))}
+              {moodCounts.length === 0 && <p className="text-sm italic text-olive/40">No moods recorded yet</p>}
+            </div>
+          </div>
+          <div className="flex-1 border-t md:border-t-0 md:border-l border-sand pt-4 md:pt-0 md:pl-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-olive/40 mb-4">Reflections</p>
+            <div className="space-y-3">
+               <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-plum">Consistency</span>
+                  <span className="text-olive">{Math.round((totalJournaled / 365) * 100)}%</span>
+               </div>
+               <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-plum">Primary Vibe</span>
+                  <span className="text-olive">{moodCounts[0]?.[0] || "N/A"}</span>
+               </div>
+               <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-plum">Last Entry</span>
+                  <span className="text-olive">{entries[entries.length-1]?.date || "None"}</span>
+               </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -159,5 +221,6 @@ export default function Journal() {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 }
