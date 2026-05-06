@@ -43,7 +43,7 @@ export type AlbumEntry = {
 
 const KEY = "muse:store:v2";
 const AUTH_KEY = "muse:auth:v1";
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 type Store = {
   canvases: CanvasDoc[]; journal: JournalEntry[]; movies: MovieEntry[]; books: BookEntry[]; sketches: SketchDoc[]; songs: SongEntry[]; albums: AlbumEntry[];
