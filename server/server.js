@@ -17,9 +17,22 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+const mongoURI = process.env.MONGODB_URI;
+if (!mongoURI) {
+  console.error('FATAL: MONGODB_URI is not defined in environment variables.');
+}
+
+mongoose.connect(mongoURI || '')
   .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    // Don't crash, but log heavily
+  });
+
+// Root route for health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
+});
 
 // Schemas
 const UserSchema = new mongoose.Schema({

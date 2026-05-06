@@ -23,7 +23,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
+      const endpoint = isRegister ? `${API_BASE}/auth/register` : `${API_BASE}/auth/login`;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
