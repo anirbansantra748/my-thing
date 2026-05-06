@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Sparkles, Menu, X, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Sparkles, Menu, X, Download, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { exportStore } from "@/lib/store";
+import { exportStore, getAuth, setAuth, User } from "@/lib/store";
 
 const links = [
   { to: "/", label: "Home" },
@@ -17,7 +17,21 @@ const links = [
 
 export function AppHeader() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(getAuth());
+
+  useEffect(() => {
+    const syncAuth = () => setUser(getAuth());
+    window.addEventListener("muse:auth:update", syncAuth);
+    return () => window.removeEventListener("muse:auth:update", syncAuth);
+  }, []);
+
+  const handleLogout = () => {
+    setAuth(null);
+    setIsOpen(false);
+    navigate("/login");
+  };
 
   return (
     <header className={`sticky top-0 z-50 border-b border-sand transition-all duration-300 ${
@@ -49,16 +63,27 @@ export function AppHeader() {
               </Link>
             );
           })}
+          
+          <div className="w-px h-6 bg-sand mx-2" />
+          
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={exportStore}
-            className="ml-2 gap-2 text-olive/40 hover:text-plum hover:bg-sand rounded-full px-4"
+            className="text-olive/40 hover:text-plum hover:bg-sand rounded-full px-4 gap-2"
             title="Backup Studio Data"
           >
             <Download className="w-4 h-4" />
-            <span className="hidden lg:inline">Backup</span>
           </Button>
+
+          {user && (
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-sand">
+               <span className="text-[10px] font-black uppercase tracking-widest text-olive/40 hidden lg:block">{user.username}</span>
+               <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full h-9 w-9 text-olive/40 hover:text-red-500 hover:bg-red-500/5">
+                  <LogOut className="w-4 h-4" />
+               </Button>
+            </div>
+          )}
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -79,6 +104,15 @@ export function AppHeader() {
           }`}
         >
           <nav className="flex flex-col items-center justify-center h-full gap-8 px-6 pt-20">
+            {user && (
+              <div className="flex flex-col items-center gap-2 mb-4">
+                <div className="w-16 h-16 rounded-full bg-sand grid place-items-center">
+                  <UserIcon className="w-8 h-8 text-plum/20" />
+                </div>
+                <span className="text-sm font-black uppercase tracking-[0.2em] text-plum">{user.username}</span>
+              </div>
+            )}
+
             {links.map((l, i) => {
               const active = l.to === "/" ? pathname === "/" : pathname.startsWith(l.to);
               return (
@@ -95,13 +129,25 @@ export function AppHeader() {
                 </Link>
               );
             })}
-            <Button 
-              variant="outline" 
-              onClick={() => { exportStore(); setIsOpen(false); }}
-              className="mt-4 gap-3 rounded-2xl border-sand text-plum font-bold h-14 px-8 w-full max-w-[280px]"
-            >
-              <Download className="w-5 h-5" /> Backup Studio
-            </Button>
+            
+            <div className="flex flex-col gap-3 w-full max-w-[280px] mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => { exportStore(); setIsOpen(false); }}
+                className="gap-3 rounded-2xl border-sand text-plum font-bold h-14 px-8 w-full shadow-sm"
+              >
+                <Download className="w-5 h-5" /> Backup Studio
+              </Button>
+              {user && (
+                <Button 
+                  variant="ghost" 
+                  onClick={handleLogout}
+                  className="gap-3 rounded-2xl text-red-500 font-bold h-14 px-8 w-full hover:bg-red-500/5"
+                >
+                  <LogOut className="w-5 h-5" /> Sign Out
+                </Button>
+              )}
+            </div>
           </nav>
         </div>
       </div>

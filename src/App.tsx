@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandPalette } from "@/components/CommandPalette";
+import { getAuth } from "@/lib/store";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Layout from "./components/Layout";
@@ -16,17 +17,27 @@ import Books from "./pages/Books";
 import Sketch from "./pages/Sketch";
 import Songs from "./pages/Songs";
 import Scrapbook from "./pages/Scrapbook";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const auth = getAuth();
+  if (!auth) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
 
 const AnimatedRoutes = () => {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Index />} />
-        <Route path="/sketches/:id" element={<Sketch />} />
-        <Route element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        
+        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+        <Route path="/sketches/:id" element={<ProtectedRoute><Sketch /></ProtectedRoute>} />
+        
+        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/poems" element={<Poems />} />
           <Route path="/poems/:id" element={<Poems />} />
           <Route path="/drawings" element={<Drawings />} />
@@ -38,6 +49,7 @@ const AnimatedRoutes = () => {
           <Route path="/songs" element={<Songs />} />
           <Route path="/scrapbook" element={<Scrapbook />} />
         </Route>
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

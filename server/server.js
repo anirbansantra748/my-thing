@@ -22,8 +22,15 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Schemas
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  createdAt: { type: Number, default: Date.now }
+});
+
 const CanvasSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
   kind: String,
   title: String,
   cover: String,
@@ -34,16 +41,20 @@ const CanvasSchema = new mongoose.Schema({
   createdAt: Number,
   updatedAt: Number
 });
+CanvasSchema.index({ id: 1, userId: 1 }, { unique: true });
 
 const JournalSchema = new mongoose.Schema({
-  date: { type: String, required: true, unique: true },
+  date: { type: String, required: true },
+  userId: { type: String, required: true },
   text: String,
   mood: String,
   updatedAt: Number
 });
+JournalSchema.index({ date: 1, userId: 1 }, { unique: true });
 
 const MovieSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
   title: String,
   year: String,
   rating: Number,
@@ -53,9 +64,11 @@ const MovieSchema = new mongoose.Schema({
   createdAt: Number,
   updatedAt: Number
 });
+MovieSchema.index({ id: 1, userId: 1 }, { unique: true });
 
 const BookSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
   title: String,
   author: String,
   pagesRead: Number,
@@ -67,9 +80,11 @@ const BookSchema = new mongoose.Schema({
   createdAt: Number,
   updatedAt: Number
 });
+BookSchema.index({ id: 1, userId: 1 }, { unique: true });
 
 const SketchSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
   title: String,
   elements: Array,
   appState: Object,
@@ -78,9 +93,11 @@ const SketchSchema = new mongoose.Schema({
   createdAt: Number,
   updatedAt: Number
 });
+SketchSchema.index({ id: 1, userId: 1 }, { unique: true });
 
 const SongSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
   title: String,
   artist: String,
   url: String,
@@ -93,16 +110,20 @@ const SongSchema = new mongoose.Schema({
   createdAt: Number,
   updatedAt: Number
 });
+SongSchema.index({ id: 1, userId: 1 }, { unique: true });
 
 const AlbumSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
   title: String,
   description: String,
   cover: String,
   createdAt: Number,
   updatedAt: Number
 });
+AlbumSchema.index({ id: 1, userId: 1 }, { unique: true });
 
+const User = mongoose.model('User', UserSchema);
 const Canvas = mongoose.model('Canvas', CanvasSchema);
 const Journal = mongoose.model('Journal', JournalSchema);
 const Movie = mongoose.model('Movie', MovieSchema);
@@ -111,11 +132,36 @@ const Sketch = mongoose.model('Sketch', SketchSchema);
 const Song = mongoose.model('Song', SongSchema);
 const Album = mongoose.model('Album', AlbumSchema);
 
-// Helper to handle generic CRUD
+// Auth Endpoints
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = new User({ username, password });
+    await user.save();
+    res.json({ id: user._id, username: user.username });
+  } catch (err) {
+    res.status(400).json({ error: 'Username already exists' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username, password });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    res.json({ id: user._id, username: user.username });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Helper to handle generic CRUD with userId
 const setupCRUD = (route, Model, idField = 'id') => {
   app.get(`/api/${route}`, async (req, res) => {
     try {
-      const items = await Model.find();
+      const userId = req.headers['x-user-id'];
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      const items = await Model.find({ userId });
       res.json(items);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -124,10 +170,13 @@ const setupCRUD = (route, Model, idField = 'id') => {
 
   app.post(`/api/${route}`, async (req, res) => {
     try {
+      const userId = req.headers['x-user-id'];
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      
       const id = req.body[idField];
       const item = await Model.findOneAndUpdate(
-        { [idField]: id },
-        req.body,
+        { [idField]: id, userId },
+        { ...req.body, userId },
         { upsert: true, new: true }
       );
       res.json(item);
@@ -138,7 +187,10 @@ const setupCRUD = (route, Model, idField = 'id') => {
 
   app.delete(`/api/${route}/:id`, async (req, res) => {
     try {
-      await Model.findOneAndDelete({ [idField]: req.params.id });
+      const userId = req.headers['x-user-id'];
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      
+      await Model.findOneAndDelete({ [idField]: req.params.id, userId });
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
