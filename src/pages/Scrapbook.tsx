@@ -92,10 +92,14 @@ export default function Scrapbook() {
         useCORS: true,
         backgroundColor: mode === 'music' ? '#1DB954' : '#FFFFFF',
         logging: false,
+        width: scrapbookRef.current.offsetWidth,
+        height: scrapbookRef.current.scrollHeight,
         onclone: (clonedDoc) => {
-           // Ensure textures are visible in clone
-           const el = clonedDoc.querySelector('.texture-paper') as HTMLElement;
-           if (el) el.style.backgroundImage = 'none'; // Avoid CORS on the pattern for now
+           const el = clonedDoc.querySelector('.scrapbook-container') as HTMLElement;
+           if (el) {
+             el.style.height = 'auto';
+             el.style.overflow = 'visible';
+           }
         }
       });
 
@@ -125,7 +129,7 @@ export default function Scrapbook() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F5F2] pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8F5F2] pb-40 overflow-x-hidden">
       {/* Controls Bar */}
       <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-2xl border-b border-black/5 px-6 py-4 shadow-sm">
         <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
@@ -196,12 +200,12 @@ export default function Scrapbook() {
         </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-6 py-12 flex justify-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="max-w-[1440px] mx-auto px-6 pt-24 pb-12 flex justify-center animate-in fade-in slide-in-from-bottom-8 duration-700">
         {totalItems > 0 ? (
           <div 
             ref={scrapbookRef}
-            className={`relative overflow-hidden bg-white shadow-[0_80px_160px_rgba(0,0,0,0.12)] rounded-[4rem] p-12 md:p-20 texture-paper transition-all duration-700
-              ${format === "4-5" ? "w-full max-w-[800px] aspect-[4/5]" : "w-full max-w-[800px] aspect-square"}
+            className={`relative overflow-hidden bg-white shadow-[0_80px_160px_rgba(0,0,0,0.12)] rounded-[4rem] p-16 md:p-24 texture-paper transition-all duration-700 scrapbook-container
+              ${format === "4-5" ? "w-full max-w-[800px] min-h-[1000px]" : "w-full max-w-[800px] aspect-square"}
               ${mode === 'music' ? 'bg-[#1DB954] !text-white' : ''}
             `}
           >
@@ -210,7 +214,7 @@ export default function Scrapbook() {
                  style={mode === 'mixed' ? { backgroundImage: "radial-gradient(#000 1.5px, transparent 1.5px)", backgroundSize: "40px 40px" } : {}} />
             
             {/* Artistic Header */}
-            <div className="relative z-20 mb-14">
+            <div className="relative z-20 mb-20">
                <div className="flex items-end justify-between">
                   <div>
                     <p className={`text-[11px] font-black uppercase tracking-[0.5em] mb-3 ${mode === 'music' ? 'text-white/60' : 'text-primary'}`}>
@@ -242,7 +246,7 @@ export default function Scrapbook() {
             </div>
 
             {/* Content Rendering */}
-            <div className="relative h-[calc(100%-200px)]">
+            <div className="relative">
                {mode === 'mixed' && (
                   <div className={`grid ${period === 'yearly' ? 'grid-cols-3 md:grid-cols-4 gap-4' : 'grid-cols-2 md:grid-cols-3 gap-6'}`}>
                     {displayItems.map((item: any, idx) => {

@@ -39,7 +39,7 @@ export default function Journal() {
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
+    <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-32">
       <div className="flex items-end justify-between flex-wrap gap-4 mb-8 md:mb-12">
         <div className="animate-in fade-in slide-in-from-left duration-700">
           <p className="text-xs md:text-sm uppercase tracking-widest text-olive mb-1 md:mb-2 font-bold">A year, day by day</p>

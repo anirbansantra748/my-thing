@@ -190,10 +190,22 @@ export function useStore<K extends keyof Store>(key: K): [Store[K], (v: Store[K]
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
+          const local = read()[key];
+          // Merge logic: prefer remote but keep local items that don't exist remotely
+          const merged = [...data];
+          local.forEach((l: any) => {
+             const id = l.id || l.date;
+             if (!merged.find((m: any) => (m.id || m.date) === id)) {
+                merged.push(l);
+                // Sync the local-only item back to API
+                syncWithAPI(key, [l], []);
+             }
+          });
+
           const s = read();
-          s[key] = data as Store[K];
+          s[key] = merged as Store[K];
           write(s);
-          setVal(data as Store[K]);
+          setVal(merged as Store[K]);
         }
       })
       .catch(err => console.error("Initial fetch error:", err));

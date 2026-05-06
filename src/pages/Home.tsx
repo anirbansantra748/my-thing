@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { CanvasCard } from "@/components/canvas/CanvasCard";
 import { StarRating } from "@/components/StarRating";
-import { Feather, Palette, CalendarDays, Film, BookOpen, ArrowUpRight, Pencil, Music, Play } from "lucide-react";
+import { Feather, Palette, CalendarDays, Film, BookOpen, ArrowUpRight, Pencil, Music, Play, Sparkles } from "lucide-react";
 
 const SECTIONS = [
   { to: "/poems", label: "Poems", icon: Feather, blurb: "Words, kept softly.", tex: "texture-blush" },
@@ -29,7 +29,7 @@ export default function Home() {
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="max-w-[1440px] mx-auto px-5 md:px-10 py-8 md:py-16 overflow-x-hidden">
+    <div className="max-w-[1440px] mx-auto px-5 md:px-10 pt-8 md:pt-16 pb-32 overflow-x-hidden">
       {/* Hero */}
       <section className="mb-12 md:mb-20">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-black uppercase tracking-[0.2em] mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -38,9 +38,29 @@ export default function Home() {
         <h1 className="font-display text-5xl sm:text-6xl md:text-8xl font-black text-plum leading-[0.95] tracking-tighter max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
           A quiet place to <em className="text-primary not-italic relative">keep<span className="absolute -bottom-2 left-0 w-full h-1 bg-primary/20 rounded-full" /></em> what matters.
         </h1>
-        <p className="text-olive/60 text-lg md:text-xl mt-8 max-w-2xl font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-          Poems, drawings, days, films, books — gathered like clippings in a beloved scrapbook.
-        </p>
+      </section>
+
+      {/* Stats Row */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-12 md:mb-20 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+        {[
+          { label: "Total Music", count: songs.length, icon: Music, color: "bg-plum/5 text-plum" },
+          { label: "Books Read", count: books.filter(b => b.status === 'finished').length, icon: BookOpen, color: "bg-primary/5 text-primary" },
+          { label: "Movies Watched", count: movies.filter(m => m.status === 'watched').length, icon: Film, color: "bg-sky-500/5 text-sky-500" },
+          { label: "Monthly Memories", count: [
+            ...canvases.filter(c => new Date(c.updatedAt).getMonth() === new Date().getMonth()),
+            ...movies.filter(m => new Date(m.updatedAt).getMonth() === new Date().getMonth()),
+            ...books.filter(b => new Date(b.updatedAt).getMonth() === new Date().getMonth()),
+            ...songs.filter(s => new Date(s.updatedAt).getMonth() === new Date().getMonth()),
+          ].length, icon: Sparkles, color: "bg-amber-500/5 text-amber-500" },
+        ].map((stat, i) => (
+          <div key={i} className="flex flex-col gap-2 p-6 rounded-[2rem] bg-white border border-black/5 shadow-sm">
+            <div className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center mb-2`}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <div className="text-3xl font-black text-plum tracking-tighter">{stat.count}</div>
+            <div className="text-[10px] font-black text-olive/40 uppercase tracking-[0.2em]">{stat.label}</div>
+          </div>
+        ))}
       </section>
 
       {/* Section tiles - God Tier Glassmorphism */}

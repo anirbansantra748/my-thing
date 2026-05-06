@@ -32,7 +32,7 @@ export default function Books() {
   const remove = (id: string) => { setBooks(books.filter((b) => b.id !== id)); setOpen(null); };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
+    <div className="max-w-[1440px] mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-32">
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6 md:mb-8">
         <div>
           <p className="text-xs md:text-sm uppercase tracking-widest text-olive mb-1 md:mb-2">Pages, slowly turned</p>
@@ -121,7 +121,13 @@ function BookDialog({ entry, onClose, onSave, onDelete }: {
                  className="rounded-full bg-warm-fog border-0" />
           <div className="flex flex-wrap gap-2">
             {STATUSES.map((s) => (
-              <button key={s} onClick={() => setB({ ...b, status: s })}
+              <button key={s} onClick={() => {
+                const update: Partial<BookEntry> = { status: s };
+                if (s === "finished" && b.totalPages > 0) {
+                  update.pagesRead = b.totalPages;
+                }
+                setB({ ...b, ...update });
+              }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize ${
                         b.status === s ? "bg-plum text-background" : "bg-sand text-plum"
                       }`}>{s.replace("-", " ")}</button>

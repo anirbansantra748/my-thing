@@ -6,7 +6,7 @@ import {
   MoreHorizontal, ChevronLeft, LayoutGrid, List as ListIcon,
   Heart, Clock, Disc, Eye, EyeOff, FolderPlus, Trash2, Edit2, Check,
   ExternalLink, Layers, Shuffle, SkipForward, SkipBack, Repeat,
-  Volume2, Maximize2, ListMusic, Home
+  Volume2, Maximize2, ListMusic, Home, Settings, Minimize2, Mic2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,8 @@ export default function Songs() {
   };
   const [isSeeking, setIsSeeking] = useState(false);
   const [volume, setVolume] = useState(100);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [quality, setQuality] = useState<string>('tiny');
 
   const playerRef = useRef<any>(null);
   const progressInterval = useRef<any>(null);
@@ -111,13 +113,16 @@ export default function Songs() {
     const initPlayer = () => {
       if (!window.YT || !window.YT.Player) return;
 
+      const targetId = isExpanded ? 'yt-player-expanded' : 'yt-player';
+      if (!document.getElementById(targetId)) return;
+
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch (e) { }
       }
 
-      playerRef.current = new window.YT.Player('yt-player', {
-        width: '200',
-        height: '112',
+      playerRef.current = new window.YT.Player(targetId, {
+        width: isExpanded ? '100%' : '200',
+        height: isExpanded ? '100%' : '112',
         videoId: ytId,
         playerVars: {
           autoplay: 1,
@@ -133,9 +138,10 @@ export default function Songs() {
             const target = event.target;
             if (!target) return;
             try {
-              target.setPlaybackQuality('tiny');
+              target.setPlaybackQuality(quality);
               target.setVolume(volume);
-              setIsPlaying(true);
+              if (isPlaying) target.playVideo();
+              if (currentTime > 0) target.seekTo(currentTime, true);
               setDuration(target.getDuration());
             } catch (err) {
               console.error("YT Ready Error:", err);
@@ -148,7 +154,7 @@ export default function Songs() {
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
               setTimeout(() => {
-                try { target.setPlaybackQuality('tiny'); } catch { }
+                try { target.setPlaybackQuality(quality); } catch { }
               }, 500);
             }
             if (event.data === window.YT.PlayerState.PAUSED) setIsPlaying(false);
@@ -158,8 +164,8 @@ export default function Songs() {
             }
           },
           onPlaybackQualityChange: (event: any) => {
-            if (event.data !== 'tiny') {
-              try { event.target.setPlaybackQuality('tiny'); } catch { }
+            if (event.data !== quality) {
+              try { event.target.setPlaybackQuality(quality); } catch { }
             }
           },
           onError: () => {
@@ -171,11 +177,40 @@ export default function Songs() {
     };
 
     if (window.YT && window.YT.Player) {
-      initPlayer();
+      // Small delay to ensure DOM is ready, especially for the expanded modal
+      const timer = setTimeout(initPlayer, 100);
+      return () => clearTimeout(timer);
     } else {
       window.onYouTubeIframeAPIReady = initPlayer;
     }
-  }, [playing]);
+
+    // Media Session API for Background Play & OS Controls
+    if ('mediaSession' in navigator && playing) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: playing.title,
+        artist: playing.artist,
+        artwork: [
+          { src: playing.cover || '', sizes: '512x512', type: 'image/jpeg' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (playerRef.current) playerRef.current.playVideo();
+        setIsPlaying(true);
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (playerRef.current) playerRef.current.pauseVideo();
+        setIsPlaying(false);
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+      navigator.mediaSession.setActionHandler('nexttrack', playNext);
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined && playerRef.current) {
+          playerRef.current.seekTo(details.seekTime, true);
+        }
+      });
+    }
+  }, [playing, isExpanded]);
 
   const togglePlay = () => {
     if (!playerRef.current) return;
@@ -204,6 +239,15 @@ export default function Songs() {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const changeQuality = (q: string) => {
+    setQuality(q);
+    if (playerRef.current) {
+      try {
+        playerRef.current.setPlaybackQuality(q);
+      } catch (e) { }
+    }
   };
 
   const createAlbum = () => {
@@ -460,7 +504,12 @@ export default function Songs() {
                       {new Date(s.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
                     </div>
                     <div className="w-24 flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setSongs(songs.filter(item => item.id !== s.id)); }}
+                      <Button variant="ghost" size="icon" onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if (confirm(`Are you sure you want to delete "${s.title}"?`)) {
+                          setSongs(songs.filter(item => item.id !== s.id));
+                        }
+                      }}
                         className="rounded-2xl w-11 h-11 text-olive/20 hover:text-red-500 hover:bg-red-500/5 transition-colors">
                         <Trash2 className="w-5 h-5" />
                       </Button>
@@ -556,10 +605,16 @@ export default function Songs() {
                   <div className="flex items-center justify-between gap-4">
 
                     {/* Left: Track Signature */}
-                    <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:max-w-[300px]">
-                      <div className="relative shrink-0 w-12 h-12 md:w-14 md:h-14">
+                    <div 
+                      className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:max-w-[300px] cursor-pointer"
+                      onClick={() => setIsExpanded(true)}
+                    >
+                      <div className="relative shrink-0 w-12 h-12 md:w-14 md:h-14 group/thumb">
                         <div className="w-full h-full rounded-xl md:rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-black/40">
-                          <img src={playing.cover} alt="" className="w-full h-full object-cover" />
+                          <img src={playing.cover} alt="" className="w-full h-full object-cover transition-transform group-hover/thumb:scale-110" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity">
+                            <Maximize2 className="w-5 h-5 text-white" />
+                          </div>
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-full bg-[#121212] border-2 border-[#121212] flex items-center justify-center">
                           <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
@@ -657,6 +712,140 @@ export default function Songs() {
             </div>
           </div>
         </>
+      )}
+
+      {/* God Tier Expanded Player UI */}
+      {playing && isExpanded && (
+        <div className="fixed inset-0 z-[200] bg-black animate-in fade-in zoom-in duration-500 overflow-y-auto scrollbar-hide">
+          <div className="min-h-screen flex flex-col md:flex-row p-8 md:p-16 gap-12 max-w-7xl mx-auto">
+            
+            {/* Background Atmosphere */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+               <img src={playing.cover} className="w-full h-full object-cover opacity-20 blur-[100px] scale-150" alt="" />
+            </div>
+
+            {/* Close Button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsExpanded(false)}
+              className="fixed top-8 right-8 z-[210] rounded-full w-14 h-14 bg-white/5 hover:bg-white/10 text-white transition-all hover:rotate-90"
+            >
+              <X className="w-8 h-8" />
+            </Button>
+
+            {/* Left Column: Visuals & Player */}
+            <div className="relative z-[205] flex-1 flex flex-col gap-8">
+              <div className="aspect-square w-full max-w-[500px] mx-auto rounded-[4rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.6)] border-8 border-white/5">
+                <img src={playing.cover} alt="" className="w-full h-full object-cover" />
+              </div>
+
+              <div className="text-center md:text-left">
+                <h2 className="text-4xl md:text-6xl font-display font-black text-white tracking-tighter mb-4">{playing.title}</h2>
+                <div className="flex items-center justify-center md:justify-start gap-4 text-white/40 font-black uppercase tracking-[0.3em]">
+                   <span className="text-plum">{playing.artist}</span>
+                   <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                   <span>Studio Master</span>
+                </div>
+              </div>
+
+              {/* YouTube IFrame - Large Format */}
+              <div className="rounded-[3rem] overflow-hidden bg-black/40 border border-white/5 aspect-video w-full max-w-2xl mx-auto relative group">
+                <div id="yt-player-expanded" className="w-full h-full" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                <div className="absolute bottom-6 left-6 flex items-center gap-4">
+                  <div className="bg-black/60 backdrop-blur-xl px-4 py-2 rounded-2xl text-[10px] font-black text-white flex items-center gap-3 border border-white/10">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    LIVE QUALITY: {quality.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Controls & Extra Info */}
+            <div className="relative z-[205] w-full md:w-[400px] flex flex-col gap-10 pt-12 md:pt-0">
+               
+               {/* Controls Dashboard */}
+               <div className="bg-white/5 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/10 space-y-12">
+                  <div className="flex items-center justify-between">
+                    <Button variant="ghost" size="icon" onClick={() => setIsShuffle(!isShuffle)} className={isShuffle ? 'text-plum' : 'text-white/20'}>
+                      <Shuffle className="w-6 h-6" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-white/20 hover:text-white transition-colors">
+                      <ListMusic className="w-6 h-6" />
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-8">
+                     <div className="flex items-center gap-10">
+                        <Button variant="ghost" size="icon" onClick={playPrev} className="text-white/40 hover:text-white scale-125 transition-all">
+                          <SkipBack className="w-8 h-8 fill-current" />
+                        </Button>
+                        <Button onClick={togglePlay} className="w-24 h-24 rounded-full bg-white text-black hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center justify-center">
+                          {isPlaying ? <Pause className="w-10 h-10" fill="currentColor" /> : <Play className="w-10 h-10 ml-1" fill="currentColor" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={playNext} className="text-white/40 hover:text-white scale-125 transition-all">
+                          <SkipForward className="w-8 h-8 fill-current" />
+                        </Button>
+                     </div>
+
+                     <div className="w-full space-y-4">
+                        <div className="flex justify-between text-[10px] font-black text-white/20 uppercase tracking-widest">
+                           <span>{formatTime(currentTime)}</span>
+                           <span>{formatTime(duration)}</span>
+                        </div>
+                        <Slider 
+                          value={[currentTime]} 
+                          max={duration || 100} 
+                          step={0.1} 
+                          onValueChange={handleSeek} 
+                          onValueCommit={commitSeek}
+                          className="w-full"
+                        />
+                     </div>
+                  </div>
+
+                  {/* Quality Selector */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-white/40 font-black text-[10px] uppercase tracking-widest">
+                       <Settings className="w-3 h-3" /> Playback Assurance
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       {['tiny', 'small', 'medium', 'hd720'].map((q) => (
+                         <Button
+                           key={q}
+                           onClick={() => changeQuality(q)}
+                           className={`rounded-2xl h-11 text-[10px] font-black uppercase tracking-wider transition-all ${quality === q ? 'bg-plum text-white shadow-lg' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                         >
+                           {q === 'tiny' ? 'Low Data' : q === 'small' ? 'Normal' : q === 'medium' ? 'High' : 'Ultra HD'}
+                         </Button>
+                       ))}
+                    </div>
+                  </div>
+               </div>
+
+               {/* About Artist Section */}
+               <div className="bg-white/5 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/10 space-y-6 group/artist">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-display font-black text-white tracking-tight">About the artist</h3>
+                    <Mic2 className="w-5 h-5 text-plum animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 shadow-2xl transition-transform group-hover/artist:scale-110">
+                       <img src={playing.cover} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                       <div className="text-white font-black text-lg leading-none mb-1">{playing.artist}</div>
+                       <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Verified Creator</div>
+                    </div>
+                  </div>
+                  <p className="text-white/40 text-sm leading-relaxed font-medium">
+                    This artist is currently trending in your studio collection. Most played track this week from the {playing.albumId ? 'same album' : 'library'}.
+                  </p>
+               </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <style dangerouslySetInnerHTML={{
