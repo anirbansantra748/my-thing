@@ -122,13 +122,23 @@ export function useStore<K extends keyof Store>(key: K): [Store[K], (v: Store[K]
           if (Array.isArray(data)) {
             const local = read()[key];
             const merged = [...data];
+            let migratedCount = 0;
+            
             local.forEach((l: any) => {
                const id = l.id || l.date;
                if (!merged.find((m: any) => (m.id || m.date) === id)) {
                   merged.push(l);
                   syncWithAPI(key, [l], []);
+                  migratedCount++;
                }
             });
+
+            if (migratedCount > 0) {
+               import('sonner').then(({ toast }) => {
+                  toast.success(`Cloud Sync: ${migratedCount} ${key} migrated to database`);
+               });
+            }
+
             const s = read();
             s[key] = merged as Store[K];
             write(s);
