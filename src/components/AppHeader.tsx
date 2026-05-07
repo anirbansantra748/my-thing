@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Sparkles, Menu, X, Download, LogOut, User as UserIcon } from "lucide-react";
+import { Sparkles, Menu, X, Download, LogOut, User as UserIcon, Shield, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportStore, getAuth, setAuth, User } from "@/lib/store";
 
@@ -12,6 +12,8 @@ const links = [
   { to: "/movies", label: "Movies" },
   { to: "/books", label: "Books" },
   { to: "/songs", label: "Music" },
+  { to: "/vault", label: "Vault" },
+  { to: "/exhibition", label: "Exhibition" },
   { to: "/scrapbook", label: "Scrapbook" },
 ];
 

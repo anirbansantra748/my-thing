@@ -61,9 +61,9 @@ export function CanvasCard({ doc, href, hideMeta }: Props) {
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
                style={{ backgroundImage: "radial-gradient(#000 0.5px, transparent 0.5px)", backgroundSize: "12px 12px" }} />
           
-          {doc.items
+          {(doc.items || [])
             .slice()
-            .sort((a, b) => a.zIndex - b.zIndex)
+            .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
             .map((it) => (
               <div
                 key={it.id}

@@ -150,6 +150,31 @@ const AlbumSchema = new mongoose.Schema({
 });
 AlbumSchema.index({ id: 1, userId: 1 }, { unique: true });
 
+const VaultSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
+  title: String,
+  category: String,
+  image: String,
+  notes: String,
+  isPinned: { type: Boolean, default: false },
+  createdAt: Number,
+  updatedAt: Number
+});
+VaultSchema.index({ id: 1, userId: 1 }, { unique: true });
+
+const PhotoSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
+  title: String,
+  image: { type: String, required: true },
+  moment: String,
+  location: String,
+  createdAt: Number,
+  updatedAt: Number
+});
+PhotoSchema.index({ id: 1, userId: 1 }, { unique: true });
+
 const User = mongoose.model('User', UserSchema);
 const Canvas = mongoose.model('Canvas', CanvasSchema);
 const Journal = mongoose.model('Journal', JournalSchema);
@@ -158,6 +183,8 @@ const Book = mongoose.model('Book', BookSchema);
 const Sketch = mongoose.model('Sketch', SketchSchema);
 const Song = mongoose.model('Song', SongSchema);
 const Album = mongoose.model('Album', AlbumSchema);
+const Vault = mongoose.model('Vault', VaultSchema);
+const Photo = mongoose.model('Photo', PhotoSchema);
 
 // Auth Endpoints
 app.post('/api/auth/register', async (req, res) => {
@@ -232,6 +259,8 @@ setupCRUD('books', Book);
 setupCRUD('sketches', Sketch);
 setupCRUD('songs', Song);
 setupCRUD('albums', Album);
+setupCRUD('vault', Vault);
+setupCRUD('photos', Photo);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

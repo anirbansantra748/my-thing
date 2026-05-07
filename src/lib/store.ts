@@ -51,15 +51,24 @@ export type AlbumEntry = {
   id: string; userId: string; title: string; description?: string; cover?: string; createdAt: number; updatedAt: number;
 };
 
+export type VaultEntry = {
+  id: string; userId: string; title: string; category: string; image: string; notes?: string; isPinned?: boolean; createdAt: number; updatedAt: number;
+};
+
+export type PhotoEntry = {
+  id: string; userId: string; title?: string; image: string; moment?: string; location?: string; createdAt: number; updatedAt: number;
+};
+
 const KEY = "muse:store:v2";
 const AUTH_KEY = "muse:auth:v1";
 export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 type Store = {
   canvases: CanvasDoc[]; journal: JournalEntry[]; movies: MovieEntry[]; books: BookEntry[]; sketches: SketchDoc[]; songs: SongEntry[]; albums: AlbumEntry[];
+  vault: VaultEntry[]; photos: PhotoEntry[];
 };
 
-const empty: Store = { canvases: [], journal: [], movies: [], books: [], sketches: [], songs: [], albums: [] };
+const empty: Store = { canvases: [], journal: [], movies: [], books: [], sketches: [], songs: [], albums: [], vault: [], photos: [] };
 
 // Memory cache for synchronous access
 let memoryStore: Store = empty;
@@ -147,6 +156,8 @@ function write(s: Store) {
     if (light.books) light.books = s.books.map(b => ({ id: b.id, title: b.title, updatedAt: b.updatedAt, status: b.status, isPinned: b.isPinned }));
     if (light.songs) light.songs = s.songs.map(so => ({ id: so.id, title: so.title, updatedAt: so.updatedAt, isPinned: so.isPinned }));
     if (light.journal) light.journal = s.journal.map(j => ({ date: j.date, mood: j.mood, updatedAt: j.updatedAt }));
+    if (light.vault) light.vault = s.vault.map(v => ({ id: v.id, title: v.title, category: v.category, updatedAt: v.updatedAt, isPinned: v.isPinned }));
+    if (light.photos) light.photos = s.photos.map(p => ({ id: p.id, moment: p.moment, updatedAt: p.updatedAt }));
     localStorage.setItem(KEY, JSON.stringify(light));
   } catch (e) {
     // If it fails, we don't care, IDB has it.
