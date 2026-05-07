@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useStore, uid, SketchDoc } from "@/lib/store";
+import { useStore, uid, SketchDoc, getAuth } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Trash2, Download } from "lucide-react";
@@ -18,16 +18,37 @@ export function ExcalidrawEditor() {
   const [sketches, setSketches] = useStore("sketches");
   const existing = sketches.find((s) => s.id === id);
 
-  const [doc, setDoc] = useState<SketchDoc>(() =>
-    existing || {
+  const [doc, setDoc] = useState<SketchDoc>(() => {
+    const user = getAuth();
+    if (id === "new") {
+      const newId = uid();
+      return {
+        id: newId,
+        userId: user?.id || "",
+        title: "Untitled Sketch",
+        elements: [],
+        appState: { viewBackgroundColor: "#ffffff" },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+    }
+    return existing || {
       id: uid(),
+      userId: user?.id || "",
       title: "Untitled Sketch",
       elements: [],
       appState: { viewBackgroundColor: "#ffffff" },
       createdAt: Date.now(),
       updatedAt: Date.now(),
+    };
+  });
+
+  // Redirect if new
+  useEffect(() => {
+    if (id === "new") {
+      nav(`/sketches/${doc.id}`, { replace: true });
     }
-  );
+  }, [id, doc.id, nav]);
 
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
 

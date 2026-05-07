@@ -13,7 +13,13 @@ export function GalleryPage({ kind }: Props) {
   const nav = useNavigate();
   const [quick, setQuick] = useState("");
 
-  const items = docs.filter((d) => d.kind === kind).sort((a, b) => b.updatedAt - a.updatedAt);
+  const items = docs
+    .filter((d) => d.kind === kind)
+    .sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return b.updatedAt - a.updatedAt;
+    });
   const isPoem = kind === "poem";
   const baseRoute = isPoem ? "/poems" : "/drawings";
 
@@ -22,10 +28,13 @@ export function GalleryPage({ kind }: Props) {
   const quickCreate = () => {
     if (!quick.trim()) return;
     const id = uid();
+    const user = getAuth();
+    if (!user) return;
+
     setDocs([
       ...docs,
       {
-        id, kind: "poem", title: quick.split("\n")[0].slice(0, 60) || "Untitled Poem",
+        id, userId: user.id, kind: "poem", title: quick.split("\n")[0].slice(0, 60) || "Untitled Poem",
         background: "paper", width: 900, height: 1100,
         items: [{
           id: uid(), type: "text", x: 80, y: 100, width: 740, height: 800, zIndex: 1,

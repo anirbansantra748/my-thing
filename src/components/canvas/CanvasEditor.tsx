@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CanvasDoc, CanvasItem, uid, useStore } from "@/lib/store";
+import { CanvasDoc, CanvasItem, uid, useStore, getAuth } from "@/lib/store";
 import { CanvasStage, BG_KEYS, BG_PRESETS } from "./CanvasStage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +24,33 @@ export function CanvasEditor({ kind }: Props) {
   const [docs, setDocs] = useStore("canvases");
   const existing = docs.find((d) => d.id === id);
 
-  const [doc, setDoc] = useState<CanvasDoc>(() =>
-    existing || {
+  const [doc, setDoc] = useState<CanvasDoc>(() => {
+    const user = getAuth();
+    if (id === "new") {
+      const newId = uid();
+      // We'll redirect in useEffect, but initialize with the newId
+      return {
+        id: newId,
+        userId: user?.id || "",
+        kind,
+        title: kind === "poem" ? "Untitled Poem" : "Untitled Drawing",
+        background: kind === "poem" ? "paper" : "linen",
+        width: 900,
+        height: 1100,
+        items: kind === "poem"
+          ? [{
+              id: uid(), type: "text", x: 80, y: 80, width: 740, height: 100, zIndex: 1,
+              text: "Write your poem…", fontFamily: "var(--font-display)", fontSize: 42, fontWeight: 600,
+              color: "#211922", italic: true, align: "left",
+            }]
+          : [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+    }
+    return existing || {
       id: uid(),
+      userId: user?.id || "",
       kind,
       title: kind === "poem" ? "Untitled Poem" : "Untitled Drawing",
       background: kind === "poem" ? "paper" : "linen",
@@ -41,8 +65,16 @@ export function CanvasEditor({ kind }: Props) {
         : [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
+    };
+  });
+
+  // Redirect if new
+  useEffect(() => {
+    if (id === "new") {
+      const base = kind === "poem" ? "poems" : "drawings";
+      nav(`/${base}/${doc.id}`, { replace: true });
     }
-  );
+  }, [id, doc.id, nav, kind]);
 
   const setItems = (items: CanvasItem[]) => setDoc({ ...doc, items, updatedAt: Date.now() });
 

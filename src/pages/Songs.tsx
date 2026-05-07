@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useStore, uid, SongEntry, AlbumEntry } from "@/lib/store";
+import { useStore, uid, SongEntry, AlbumEntry, getAuth } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import {
   Plus, Search, Play, Pause, X, Music,
   MoreHorizontal, ChevronLeft, LayoutGrid, List as ListIcon,
   Heart, Clock, Disc, Eye, EyeOff, FolderPlus, Trash2, Edit2, Check,
   ExternalLink, Layers, Shuffle, SkipForward, SkipBack, Repeat,
-  Volume2, Maximize2, ListMusic, Home, Settings, Minimize2, Mic2
+  Volume2, Maximize2, ListMusic, Home, Settings, Minimize2, Mic2, Pin, Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export default function Songs() {
   const [addSongToAlbum, setAddSongToAlbum] = useState<string | null>(null);
   const [isShuffle, setIsShuffle] = useState(false);
   const [likedAlbums, setLikedAlbums] = useState<string[]>([]);
+  const [shuffleQueue, setShuffleQueue] = useState<string[]>([]);
 
   const toggleLikeAlbum = (id: string) => {
     setLikedAlbums(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
@@ -46,6 +47,12 @@ export default function Songs() {
   const [isSeeking, setIsSeeking] = useState(false);
   const [volume, setVolume] = useState(100);
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Reset shuffle queue when album or shuffle mode changes
+  useEffect(() => {
+    setShuffleQueue([]);
+  }, [currentAlbumId, isShuffle]);
+
   const [quality, setQuality] = useState<string>('tiny');
 
   const playerRef = useRef<any>(null);
@@ -55,6 +62,8 @@ export default function Songs() {
     songs.filter(s => s.albumId === currentAlbumId),
     [songs, currentAlbumId]
   );
+
+  const currentAlbum = albums.find(a => a.id === currentAlbumId);
 
   // Playback Progress Tracker
   useEffect(() => {
@@ -76,14 +85,28 @@ export default function Songs() {
 
   const playNext = () => {
     if (albumSongs.length === 0) return;
-    let nextIndex = 0;
+    
     if (isShuffle) {
-      nextIndex = Math.floor(Math.random() * albumSongs.length);
+      let queue = [...shuffleQueue];
+      
+      // If queue is empty or all songs in current album have been played, reshuffle
+      if (queue.length === 0) {
+        queue = albumSongs.map(s => s.id).sort(() => Math.random() - 0.5);
+        // If we just finished the last song and it's the first in the new queue, move it to end
+        if (queue.length > 1 && queue[0] === playing?.id) {
+          queue.push(queue.shift()!);
+        }
+      }
+      
+      const nextId = queue.shift();
+      setShuffleQueue(queue);
+      const nextSong = albumSongs.find(s => s.id === nextId);
+      if (nextSong) setPlaying(nextSong);
     } else {
       const currentIndex = albumSongs.findIndex(s => s.id === playing?.id);
-      nextIndex = (currentIndex + 1) % albumSongs.length;
+      const nextIndex = (currentIndex + 1) % albumSongs.length;
+      setPlaying(albumSongs[nextIndex]);
     }
-    setPlaying(albumSongs[nextIndex]);
   };
 
   // Fetch Lyrics
@@ -199,14 +222,23 @@ export default function Songs() {
 
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
+              if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+              }
               setTimeout(() => {
                 try { target.setPlaybackQuality(quality); } catch { }
               }, 500);
             }
-            if (event.data === window.YT.PlayerState.PAUSED) setIsPlaying(false);
+            if (event.data === window.YT.PlayerState.PAUSED) {
+              setIsPlaying(false);
+              if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+              }
+            }
             if (event.data === window.YT.PlayerState.ENDED) {
               setIsPlaying(false);
-              playNext();
+              // Small delay to prevent rapid-fire issues on some devices
+              setTimeout(playNext, 100);
             }
           },
           onPlaybackQualityChange: (event: any) => {
@@ -232,12 +264,13 @@ export default function Songs() {
 
     // Media Session API for Background Play & OS Controls
     if ('mediaSession' in navigator && playing) {
+      const artwork = playing.cover ? [{ src: playing.cover, sizes: '512x512', type: 'image/jpeg' }] : [];
+      
       navigator.mediaSession.metadata = new MediaMetadata({
         title: playing.title,
         artist: playing.artist,
-        artwork: [
-          { src: playing.cover || '', sizes: '512x512', type: 'image/jpeg' }
-        ]
+        album: currentAlbum?.title || 'Warm Canvas',
+        artwork: artwork
       });
 
       navigator.mediaSession.setActionHandler('play', () => {
@@ -248,15 +281,38 @@ export default function Songs() {
         if (playerRef.current) playerRef.current.pauseVideo();
         setIsPlaying(false);
       });
-      navigator.mediaSession.setActionHandler('previoustrack', playPrev);
-      navigator.mediaSession.setActionHandler('nexttrack', playNext);
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        playPrev();
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        playNext();
+      });
+      
+      // Update position state for better lock screen control
+      const updatePosition = () => {
+        if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+          navigator.mediaSession.setPositionState({
+            duration: playerRef.current.getDuration() || 0,
+            playbackRate: 1.0,
+            position: playerRef.current.getCurrentTime() || 0
+          });
+        }
+      };
+      
+      const posTimer = setInterval(updatePosition, 1000);
+
       navigator.mediaSession.setActionHandler('seekto', (details) => {
         if (details.seekTime !== undefined && playerRef.current) {
           playerRef.current.seekTo(details.seekTime, true);
+          updatePosition();
         }
       });
+
+      return () => {
+        clearInterval(posTimer);
+      };
     }
-  }, [playing, isExpanded]);
+  }, [playing, isExpanded, currentAlbum?.title]);
 
   const togglePlay = () => {
     if (!playerRef.current) return;
@@ -297,8 +353,11 @@ export default function Songs() {
   };
 
   const createAlbum = () => {
+    const user = getAuth();
+    if (!user) return;
     const newAlbum: AlbumEntry = {
       id: uid(),
+      userId: user.id,
       title: "New Album",
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -326,7 +385,7 @@ export default function Songs() {
     [albums, search]
   );
 
-  const currentAlbum = albums.find(a => a.id === currentAlbumId);
+
 
   return (
     <div className="min-h-screen bg-[#FCFAF7] text-[#2D2D2D] pb-52 font-sans selection:bg-plum/10 selection:text-plum">
@@ -541,9 +600,13 @@ export default function Songs() {
                       <div className="relative w-16 h-16 rounded-[1.5rem] overflow-hidden bg-black/5 shadow-sm flex-shrink-0 group-hover:shadow-xl transition-all duration-500">
                         <img src={s.cover} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                       </div>
-                      <div className="min-w-0">
-                        <h4 className={`font-black text-xl truncate tracking-tight transition-colors mb-1 ${playing?.id === s.id ? 'text-plum' : 'text-[#2D2D2D]'}`}>{s.title}</h4>
-                        <p className="text-[11px] text-olive/40 font-black uppercase tracking-widest">{s.artist}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className={`font-black text-xl truncate tracking-tight transition-colors ${playing?.id === s.id ? 'text-plum' : 'text-[#2D2D2D]'}`}>{s.title}</h4>
+                          {s.isPinned && <Pin className="w-3 h-3 text-plum fill-current" />}
+                          {s.isMasterpiece && <Award className="w-3 h-3 text-yellow-500 fill-current" />}
+                        </div>
+                        <p className="text-[11px] text-olive/40 font-black uppercase tracking-widest">{s.artist} • {s.genre || "Uncategorized"}</p>
                       </div>
                     </div>
                     <div className="hidden lg:block w-48 text-right text-[11px] font-black text-olive/20 uppercase tracking-widest tabular-nums">
@@ -611,8 +674,8 @@ export default function Songs() {
             albumId={addSongToAlbum}
             onClose={() => setAddSongToAlbum(null)}
             onSave={(s) => {
-              if (Array.isArray(s)) setSongs([...s, ...songs]);
-              else setSongs([s, ...songs]);
+              const toSave = Array.isArray(s) ? s : [s];
+              setSongs([...toSave, ...songs]);
               setAddSongToAlbum(null);
               toast.success("Library updated");
             }}
@@ -980,8 +1043,10 @@ function SongDialog({ albumId, onClose, onSave }: {
 }) {
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [bulkUrls, setBulkUrls] = useState("");
+  const user = getAuth();
   const [s, setS] = useState<Partial<SongEntry>>({
     id: uid(),
+    userId: user?.id || "",
     title: "",
     artist: "",
     url: "",
@@ -1005,7 +1070,14 @@ function SongDialog({ albumId, onClose, onSave }: {
     try {
       const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
       const data = await res.json();
-      if (data.title) setS(prev => ({ ...prev, title: data.title, artist: data.author_name }));
+      if (data.title) {
+        setS(prev => ({ 
+          ...prev, 
+          title: data.title, 
+          artist: data.author_name,
+          genre: "YouTube"
+        }));
+      }
     } catch { }
   };
 
@@ -1025,16 +1097,20 @@ function SongDialog({ albumId, onClose, onSave }: {
           artist = data.author_name || "Unknown";
         } catch { }
 
-        newSongs.push({
-          id: uid(),
-          title,
-          artist,
-          url: url.trim(),
-          albumId,
-          cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        });
+        const user = getAuth();
+        if (user) {
+          newSongs.push({
+            id: uid(),
+            userId: user.id,
+            title,
+            artist,
+            url: url.trim(),
+            albumId,
+            cover: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+        }
       }
     })), {
       loading: "Processing tracks...",
@@ -1100,6 +1176,32 @@ function SongDialog({ albumId, onClose, onSave }: {
                 onChange={e => setS({ ...s, artist: e.target.value })}
                 className="bg-black/5 border-0 rounded-2xl h-14 px-7 font-bold focus-visible:ring-plum/20"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-olive/40 ml-2">Genre / Category</label>
+              <Input
+                placeholder="e.g. Lofi, Jazz, Pop..."
+                value={s.genre || ""}
+                onChange={e => setS({ ...s, genre: e.target.value })}
+                className="bg-black/5 border-0 rounded-2xl h-14 px-7 font-bold focus-visible:ring-plum/20"
+              />
+            </div>
+            <div className="flex gap-4 items-end">
+              <button 
+                onClick={() => setS({ ...s, isPinned: !s.isPinned })}
+                className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${s.isPinned ? "bg-plum text-white" : "bg-black/5 text-olive/40 border border-black/5"}`}
+              >
+                <Pin className={`w-3.5 h-3.5 ${s.isPinned ? "fill-current" : ""}`} /> Pinned
+              </button>
+              <button 
+                onClick={() => setS({ ...s, isMasterpiece: !s.isMasterpiece })}
+                className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${s.isMasterpiece ? "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20" : "bg-black/5 text-olive/40 border border-black/5"}`}
+              >
+                <Award className={`w-3.5 h-3.5 ${s.isMasterpiece ? "fill-current" : ""}`} /> Masterpiece
+              </button>
             </div>
           </div>
         </div>

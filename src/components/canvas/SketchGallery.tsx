@@ -1,7 +1,8 @@
 import { useStore, uid } from "@/lib/store";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Pin } from "lucide-react";
+import { toast } from "sonner";
 
 export function SketchGallery() {
   const [sketches, setSketches] = useStore("sketches");
@@ -17,10 +18,24 @@ export function SketchGallery() {
     e.stopPropagation();
     if (confirm("Delete this sketch?")) {
       setSketches(sketches.filter((s) => s.id !== id));
+      toast.success("Sketch deleted");
     }
   };
 
-  const sorted = [...sketches].sort((a, b) => b.updatedAt - a.updatedAt);
+  const togglePin = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = sketches.map(s => s.id === id ? { ...s, isPinned: !s.isPinned } : s);
+    const isPinnedNow = updated.find(s => s.id === id)?.isPinned;
+    setSketches(updated);
+    toast.success(isPinnedNow ? "Pinned to top" : "Unpinned");
+  };
+
+  const sorted = [...sketches].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return b.updatedAt - a.updatedAt;
+  });
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 md:py-10">
@@ -57,6 +72,21 @@ export function SketchGallery() {
                   <Pencil className="w-8 h-8 mb-2 opacity-20 group-hover:scale-110 transition-transform" />
                 </div>
               )}
+              {/* Action Buttons */}
+              <div className="absolute top-2 right-2 z-10 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={(e) => togglePin(e, s.id)}
+                  className={`p-1.5 rounded-full backdrop-blur-md border border-sand/50 transition-all ${s.isPinned ? "bg-plum text-white" : "bg-white/60 text-plum hover:bg-white/80"}`}
+                >
+                  <Pin className={`w-3 h-3 ${s.isPinned ? "fill-current" : ""}`} />
+                </button>
+              </div>
+              {s.isPinned && (
+                <div className="absolute top-2 left-2 z-10 p-1.5 rounded-full bg-plum/80 backdrop-blur-sm text-white">
+                   <Pin className="w-2.5 h-2.5 fill-current" />
+                </div>
+              )}
+
               <div className="absolute inset-x-0 bottom-0 p-3 bg-white/90 backdrop-blur-sm border-t border-sand translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
                 <div className="flex justify-between items-center gap-2">
                   <div className="text-plum text-xs font-semibold truncate flex-1">{s.title || "Untitled Sketch"}</div>

@@ -14,27 +14,37 @@ export type CanvasItem = {
 };
 
 export type CanvasDoc = {
-  id: string; userId: string; kind: "poem" | "drawing"; title: string; cover?: string; background: string; width: number; height: number; items: CanvasItem[]; createdAt: number; updatedAt: number;
+  id: string; userId: string; kind: "poem" | "drawing"; title: string; cover?: string; background: string; width: number; height: number; items: CanvasItem[]; 
+  category?: string; isPinned?: boolean;
+  createdAt: number; updatedAt: number;
 };
 
 export type JournalEntry = {
-  date: string; userId: string; text: string; mood?: string; updatedAt: number;
+  date: string; userId: string; text: string; mood?: string; images?: string[]; updatedAt: number;
 };
 
 export type MovieEntry = {
-  id: string; userId: string; title: string; year?: string; rating: number; status: "watching" | "watched" | "watchlist"; cover?: string; notes: string; createdAt: number; updatedAt: number;
+  id: string; userId: string; title: string; year?: string; rating: number; status: "watching" | "watched" | "watchlist"; cover?: string; notes: string; 
+  category?: string; isMasterpiece?: boolean; isPinned?: boolean;
+  createdAt: number; updatedAt: number;
 };
 
 export type SketchDoc = {
-  id: string; userId: string; title: string; elements: any[]; appState: any; files?: any; cover?: string; createdAt: number; updatedAt: number;
+  id: string; userId: string; title: string; elements: any[]; appState: any; files?: any; cover?: string; 
+  category?: string; isPinned?: boolean;
+  createdAt: number; updatedAt: number;
 };
 
 export type BookEntry = {
-  id: string; userId: string; title: string; author?: string; pagesRead: number; totalPages: number; rating: number; status: "reading" | "finished" | "to-read"; cover?: string; notes: string; createdAt: number; updatedAt: number;
+  id: string; userId: string; title: string; author?: string; pagesRead: number; totalPages: number; rating: number; status: "reading" | "finished" | "to-read"; cover?: string; notes: string; 
+  category?: string; isMasterpiece?: boolean; isPinned?: boolean;
+  createdAt: number; updatedAt: number;
 };
 
 export type SongEntry = {
-  id: string; userId: string; title: string; artist: string; url: string; cover?: string; notes?: string; rating?: number; albumId?: string; genre?: string; mood?: string; createdAt: number; updatedAt: number;
+  id: string; userId: string; title: string; artist: string; url: string; cover?: string; notes?: string; rating?: number; albumId?: string; genre?: string; mood?: string; 
+  isMasterpiece?: boolean; isPinned?: boolean;
+  createdAt: number; updatedAt: number;
 };
 
 export type AlbumEntry = {
@@ -54,6 +64,7 @@ const empty: Store = { canvases: [], journal: [], movies: [], books: [], sketche
 // Memory cache for synchronous access
 let memoryStore: Store = empty;
 let isInitialized = false;
+let hasSynced = new Set<string>();
 
 // IndexedDB Helper
 const DB_NAME = "muse_studio_db";
@@ -128,13 +139,14 @@ function write(s: Store) {
   
   // Still try to save small metadata to localStorage for instant boot, but catch quota errors
   try {
-    // @ts-ignore - cleaning heavy fields for LS to prevent quota errors
-    const light = { ...s };
-    if (light.canvases) light.canvases = s.canvases.map(c => ({ ...c, items: [] })); 
-    if (light.sketches) light.sketches = s.sketches.map(sk => ({ ...sk, elements: [] }));
-    if (light.movies) light.movies = s.movies.map(m => ({ ...m, cover: "" }));
-    if (light.books) light.books = s.books.map(b => ({ ...b, cover: "" }));
-    if (light.songs) light.songs = s.songs.map(so => ({ ...so, cover: "" }));
+    // Only save essential metadata to LS to prevent quota errors
+    const light: any = { ...s };
+    if (light.canvases) light.canvases = s.canvases.map(c => ({ id: c.id, title: c.title, kind: c.kind, updatedAt: c.updatedAt, isPinned: c.isPinned })); 
+    if (light.sketches) light.sketches = s.sketches.map(sk => ({ id: sk.id, title: sk.title, updatedAt: sk.updatedAt, isPinned: sk.isPinned }));
+    if (light.movies) light.movies = s.movies.map(m => ({ id: m.id, title: m.title, updatedAt: m.updatedAt, status: m.status, isPinned: m.isPinned }));
+    if (light.books) light.books = s.books.map(b => ({ id: b.id, title: b.title, updatedAt: b.updatedAt, status: b.status, isPinned: b.isPinned }));
+    if (light.songs) light.songs = s.songs.map(so => ({ id: so.id, title: so.title, updatedAt: so.updatedAt, isPinned: so.isPinned }));
+    if (light.journal) light.journal = s.journal.map(j => ({ date: j.date, mood: j.mood, updatedAt: j.updatedAt }));
     localStorage.setItem(KEY, JSON.stringify(light));
   } catch (e) {
     // If it fails, we don't care, IDB has it.
@@ -189,12 +201,17 @@ export function useStore<K extends keyof Store>(key: K): [Store[K], (v: Store[K]
 
   useEffect(() => {
     const sync = () => setVal(read()[key]);
-    const syncAuth = () => setUser(getAuth());
+    const syncAuth = () => {
+       const newUser = getAuth();
+       setUser(newUser);
+       if (newUser) hasSynced.clear(); // Reset sync state on user change
+    };
     window.addEventListener("muse:update", sync);
     window.addEventListener("muse:auth:update", syncAuth);
     window.addEventListener("storage", sync);
 
-    if (user) {
+    if (user && !hasSynced.has(key)) {
+      hasSynced.add(key);
       fetch(`${API_BASE}/${key}`, { headers: { 'x-user-id': user.id } })
         .then(r => r.json())
         .then(data => {
@@ -214,7 +231,7 @@ export function useStore<K extends keyof Store>(key: K): [Store[K], (v: Store[K]
 
             if (migratedCount > 0) {
                import('sonner').then(({ toast }) => {
-                  toast.success(`Cloud Sync: ${migratedCount} ${key} migrated to database`);
+                  toast.success(`Cloud Sync: ${migratedCount} ${key} merged with database`);
                });
             }
 

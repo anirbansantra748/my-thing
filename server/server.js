@@ -52,6 +52,8 @@ const CanvasSchema = new mongoose.Schema({
   width: Number,
   height: Number,
   items: Array,
+  category: String,
+  isPinned: { type: Boolean, default: false },
   createdAt: Number,
   updatedAt: Number
 });
@@ -62,6 +64,7 @@ const JournalSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   text: String,
   mood: String,
+  images: [String],
   updatedAt: Number
 });
 JournalSchema.index({ date: 1, userId: 1 }, { unique: true });
@@ -75,6 +78,9 @@ const MovieSchema = new mongoose.Schema({
   status: String,
   cover: String,
   notes: String,
+  category: String,
+  isMasterpiece: { type: Boolean, default: false },
+  isPinned: { type: Boolean, default: false },
   createdAt: Number,
   updatedAt: Number
 });
@@ -91,6 +97,9 @@ const BookSchema = new mongoose.Schema({
   status: String,
   cover: String,
   notes: String,
+  category: String,
+  isMasterpiece: { type: Boolean, default: false },
+  isPinned: { type: Boolean, default: false },
   createdAt: Number,
   updatedAt: Number
 });
@@ -104,6 +113,8 @@ const SketchSchema = new mongoose.Schema({
   appState: Object,
   files: Object,
   cover: String,
+  category: String,
+  isPinned: { type: Boolean, default: false },
   createdAt: Number,
   updatedAt: Number
 });
@@ -121,6 +132,8 @@ const SongSchema = new mongoose.Schema({
   albumId: String,
   genre: String,
   mood: String,
+  isMasterpiece: { type: Boolean, default: false },
+  isPinned: { type: Boolean, default: false },
   createdAt: Number,
   updatedAt: Number
 });

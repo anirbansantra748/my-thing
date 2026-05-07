@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStore, getAuth } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Image as ImageIcon, Plus } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -42,13 +42,16 @@ export default function Journal() {
   const open = openDate ? entryMap.get(openDate) : null;
   const today = new Date();
 
-  const saveEntry = (date: string, text: string, mood?: string) => {
+  const saveEntry = (date: string, text: string, mood?: string, images?: string[]) => {
+    const user = getAuth();
+    if (!user) return;
+    
     const others = entries.filter((e) => e.date !== date);
-    if (!text.trim() && !mood) {
+    if (!text.trim() && !mood && (!images || images.length === 0)) {
       setEntries(others);
       return;
     }
-    setEntries([...others, { date, text, mood, updatedAt: Date.now() }]);
+    setEntries([...others, { date, userId: user.id, text, mood, images, updatedAt: Date.now() }]);
   };
 
   return (
@@ -147,14 +150,19 @@ export default function Journal() {
                     <button
                       key={i}
                       onClick={() => setOpenDate(dateStr)}
-                      className={`aspect-square rounded-xl text-[11px] font-bold relative transition-all duration-200 flex items-center justify-center
+                      className={`aspect-square rounded-xl text-[11px] font-bold relative transition-all duration-200 flex flex-col items-center justify-center overflow-hidden
                         ${e ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 scale-105 z-10" : "hover:bg-white/80 hover:scale-110 text-plum bg-white/30"}
                         ${isToday && !e ? "ring-2 ring-plum ring-inset bg-white/60" : ""}
                       `}
                     >
-                      {e?.mood ? <span className="text-sm transform group-hover:animate-bounce">{e.mood}</span> : d}
+                      {e?.images && e.images.length > 0 && (
+                        <div className="absolute inset-0 opacity-20">
+                           <img src={e.images[0]} className="w-full h-full object-cover" alt="" />
+                        </div>
+                      )}
+                      {e?.mood ? <span className="text-sm transform group-hover:animate-bounce relative z-10">{e.mood}</span> : <span className="relative z-10">{d}</span>}
                       {e && !e.mood && (
-                         <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-plum/20 ring-2 ring-primary" />
+                         <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-plum/40 ring-1 ring-primary relative z-10" />
                       )}
                     </button>
                   );
@@ -186,7 +194,7 @@ export default function Journal() {
               <div className="flex gap-2 flex-wrap items-center">
                 {MOODS.map((m) => (
                   <button key={m}
-                          onClick={() => saveEntry(openDate, open?.text || "", open?.mood === m ? undefined : m)}
+                          onClick={() => saveEntry(openDate, open?.text || "", open?.mood === m ? undefined : m, open?.images)}
                           className={`w-10 h-10 rounded-full text-xl flex items-center justify-center transition-all duration-300 ${open?.mood === m ? "bg-primary text-white shadow-lg shadow-primary/20" : "hover:bg-black/5"}`}>
                     {m}
                   </button>
@@ -197,17 +205,60 @@ export default function Journal() {
                     type="text"
                     placeholder="Other..."
                     value={!MOODS.includes(open?.mood || "") ? open?.mood || "" : ""}
-                    onChange={(e) => saveEntry(openDate, open?.text || "", e.target.value)}
+                    onChange={(e) => saveEntry(openDate, open?.text || "", e.target.value, open?.images)}
                     className="w-24 h-10 bg-black/5 border-0 rounded-full px-4 text-xs font-black placeholder:text-olive/20 focus:ring-2 ring-primary/20 transition-all outline-none"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 </div>
               </div>
             </div>
+
+            <div className="px-5 md:px-6 mt-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-olive/40 mb-3 block">Memories</label>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                <label className="shrink-0 w-24 h-24 rounded-2xl border-2 border-dashed border-sand bg-warm-wash/50 hover:bg-sand transition-all flex flex-col items-center justify-center cursor-pointer group">
+                  <Plus className="w-6 h-6 text-olive/40 group-hover:scale-110 transition-transform" />
+                  <span className="text-[8px] font-black uppercase tracking-widest text-olive/40 mt-1">Add Image</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    multiple 
+                    className="hidden" 
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const currentImages = open?.images || [];
+                          saveEntry(openDate, open?.text || "", open?.mood, [...currentImages, reader.result as string]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }}
+                  />
+                </label>
+                {open?.images?.map((img, idx) => (
+                  <div key={idx} className="shrink-0 w-24 h-24 rounded-2xl overflow-hidden relative group">
+                    <img src={img} className="w-full h-full object-cover" alt="" />
+                    <button 
+                      onClick={() => {
+                        const updated = (open?.images || []).filter((_, i) => i !== idx);
+                        saveEntry(openDate, open?.text || "", open?.mood, updated);
+                      }}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <textarea
               key={openDate}
               defaultValue={open?.text || ""}
-              onBlur={(e) => saveEntry(openDate, e.target.value, open?.mood)}
+              onBlur={(e) => saveEntry(openDate, e.target.value, open?.mood, open?.images)}
+
               autoFocus
               placeholder="What happened today? How did it feel?"
               className="flex-1 w-full p-4 md:p-5 bg-transparent border-0 outline-none resize-none font-body text-base md:text-lg text-plum leading-relaxed placeholder:text-warm-silver min-h-[200px]"
