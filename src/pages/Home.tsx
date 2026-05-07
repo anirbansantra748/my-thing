@@ -90,12 +90,12 @@ export default function Home() {
               ...canvases, ...movies, ...books, ...songs, ...photos, ...vault, ...journal
             ].length, icon: Sparkles, color: "bg-amber-500/5 text-amber-500" },
           ].map((stat, i) => (
-            <div key={i} className="flex flex-col gap-2 p-6 rounded-[2rem] bg-white border border-black/5 shadow-sm hover:shadow-xl transition-all">
-              <div className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center mb-2`}>
-                <stat.icon className="w-5 h-5" />
+            <div key={i} className="flex flex-col gap-2 p-4 md:p-6 rounded-[2rem] bg-white border border-black/5 shadow-sm hover:shadow-xl transition-all max-w-[180px] mx-auto w-full">
+              <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl ${stat.color} flex items-center justify-center mb-2`}>
+                <stat.icon className="w-4 h-4 md:w-5 md:h-5" />
               </div>
-              <div className="text-3xl font-black text-plum tracking-tighter">{stat.count}</div>
-              <div className="text-[10px] font-black text-olive/40 uppercase tracking-[0.2em]">{stat.label}</div>
+              <div className="text-2xl md:text-3xl font-black text-plum tracking-tighter">{stat.count}</div>
+              <div className="text-[9px] md:text-[10px] font-black text-olive/40 uppercase tracking-[0.2em]">{stat.label}</div>
             </div>
           ))}
         </section>
@@ -230,32 +230,25 @@ export default function Home() {
           {recentMovies.length > 0 && (
             <section className="animate-in fade-in slide-in-from-left-8 duration-1000 delay-500">
               <Header title="Cinema & Queue" href="/movies" />
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-6">
                 {recentMovies.map((m) => (
-                  <Link key={m.id} to="/movies" className="group relative flex flex-col p-6 rounded-[2.5rem] bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden">
-                    <div className="absolute top-4 right-4 z-10">
-                      {m.status === 'watched' ? (
-                        <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[8px] font-black uppercase tracking-widest backdrop-blur-sm border border-emerald-500/20">Watched</div>
-                      ) : (
-                        <div className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[8px] font-black uppercase tracking-widest backdrop-blur-sm border border-amber-500/20">In Queue</div>
-                      )}
-                    </div>
-                    <div className="aspect-[2/3] rounded-2xl bg-black/5 overflow-hidden mb-6 shadow-xl group-hover:scale-105 transition-transform duration-700">
-                      {m.cover ? <img src={m.cover} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Film className="w-12 h-12 text-warm-silver opacity-10" /></div>}
-                    </div>
-                    <div>
-                      <div className="font-black text-plum text-xl tracking-tighter truncate mb-1">{m.title}</div>
-                      <div className="text-[10px] font-black text-olive/30 uppercase tracking-widest mb-4">{m.year} · {m.category || "General"}</div>
-                      {m.status === 'watched' ? (
-                        <div className="flex items-center justify-between">
-                          <StarRating value={m.rating} size={14} />
-                          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Reviewed</span>
-                        </div>
-                      ) : (
-                        <button className="w-full py-3 rounded-xl bg-plum/5 text-plum text-[10px] font-black uppercase tracking-widest hover:bg-plum hover:text-white transition-all">Start Watching</button>
-                      )}
-                    </div>
-                  </Link>
+                    <Link key={m.id} to="/movies" className="group relative flex items-center gap-6 p-6 rounded-[2.5rem] bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden max-w-[340px] mx-auto w-full">
+                      <div className="w-20 sm:w-32 aspect-[2/3] rounded-2xl bg-black/5 overflow-hidden flex-shrink-0 shadow-xl group-hover:scale-105 transition-transform duration-700">
+                        {m.cover ? <img src={m.cover} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Film className="w-12 h-12 text-warm-silver opacity-10" /></div>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-black text-plum text-lg sm:text-xl tracking-tighter truncate mb-1">{m.title}</div>
+                        <div className="text-[10px] font-black text-olive/30 uppercase tracking-widest mb-4 truncate">{m.year} · {m.category || "General"}</div>
+                        {m.status === 'watched' ? (
+                          <div className="flex items-center justify-between">
+                            <StarRating value={m.rating} size={14} />
+                          </div>
+                        ) : (
+                          <div className="px-3 py-1.5 rounded-lg bg-plum/5 text-plum text-[8px] font-black uppercase tracking-widest inline-block">In Queue</div>
+                        )}
+                      </div>
+                    </Link>
+
                 ))}
               </div>
             </section>
@@ -269,8 +262,8 @@ export default function Home() {
                   const pct = b.totalPages ? Math.min(100, (b.pagesRead / b.totalPages) * 100) : 0;
                   const isFinished = b.status === 'finished';
                   return (
-                    <Link key={b.id} to="/books" className="group flex items-center gap-8 p-6 rounded-[2.5rem] bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
-                      <div className="w-24 h-36 rounded-2xl bg-black/5 overflow-hidden flex-shrink-0 shadow-2xl group-hover:scale-105 transition-transform duration-700">
+                    <Link key={b.id} to="/books" className="group flex items-center gap-6 p-6 rounded-[2.5rem] bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden max-w-[340px] mx-auto w-full">
+                      <div className="w-16 sm:w-24 aspect-[2/3] rounded-2xl bg-black/5 overflow-hidden flex-shrink-0 shadow-2xl group-hover:scale-105 transition-transform duration-700">
                         {b.cover ? <img src={b.cover} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><BookOpen className="w-10 h-10 text-warm-silver opacity-10" /></div>}
                       </div>
                       <div className="flex-1 min-w-0">
