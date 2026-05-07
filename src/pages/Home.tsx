@@ -3,11 +3,12 @@ import { useStore, VaultEntry, PhotoEntry } from "@/lib/store";
 import { useMemo } from "react";
 import { CanvasCard } from "@/components/canvas/CanvasCard";
 import { StarRating } from "@/components/StarRating";
-import { Feather, Palette, CalendarDays, Film, BookOpen, ArrowUpRight, Pencil, Music, Play, Sparkles, Camera, Shield } from "lucide-react";
+import { Feather, Palette, CalendarDays, Film, BookOpen, ArrowUpRight, Pencil, Music, Play, Sparkles, Camera, Shield, Tv } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 
 const SECTIONS = [
   { to: "/poems", label: "Poems", icon: Feather, blurb: "Words, kept softly.", tex: "texture-blush" },
+  { to: "/anime", label: "Anime", icon: Tv, blurb: "Episodes logged.", tex: "texture-sky" },
   { to: "/exhibition", label: "Gallery", icon: Camera, blurb: "Shots, curated.", tex: "texture-sky" },
   { to: "/sketches", label: "Sketch", icon: Pencil, blurb: "Freehand thoughts.", tex: "texture-sky" },
   { to: "/journal", label: "Journal", icon: CalendarDays, blurb: "A year, a day at a time.", tex: "texture-warm" },
@@ -39,6 +40,7 @@ export default function Home() {
   const [songs] = useStore("songs");
   const [vault] = useStore("vault");
   const [photos] = useStore("photos");
+  const [anime] = useStore("anime");
 
   const recentCanvases = [...canvases].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 8);
   const recentSketches = [...sketches].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
@@ -46,6 +48,7 @@ export default function Home() {
   const recentBooks = [...books].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
   const recentPhotos = [...photos].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
   const recentSongs = [...songs].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
+  const recentAnime = [...anime].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   const dailyFact = useMemo(() => FACTS[Math.floor(Math.random() * FACTS.length)], []);
@@ -328,6 +331,30 @@ export default function Home() {
                        </div>
                        <span className="text-[8px] font-black text-olive/20 uppercase tracking-widest">Recent</span>
                     </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Anime Section */}
+        {recentAnime.length > 0 && (
+          <section className="mb-20 md:mb-32 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
+            <Header title="Anime Archive" href="/anime" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+              {recentAnime.map((a) => (
+                <Link key={a.id} to="/anime" className="group relative aspect-[2/3] rounded-[2.5rem] overflow-hidden bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all duration-700 hover:-translate-y-2">
+                  {a.cover ? (
+                    <img src={a.cover} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center opacity-10">
+                      <Tv className="w-12 h-12 text-plum" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-plum/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-6">
+                    <div className="text-[10px] font-black text-white uppercase tracking-widest mb-1">{a.title}</div>
+                    <div className="text-[8px] font-black text-white/60 uppercase tracking-[0.2em]">{a.episodesWatched}/{a.totalEpisodes || '?'} Episodes</div>
                   </div>
                 </Link>
               ))}

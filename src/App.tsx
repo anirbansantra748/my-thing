@@ -19,6 +19,7 @@ import Songs from "./pages/Songs";
 import Scrapbook from "./pages/Scrapbook";
 import Login from "./pages/Login";
 import Vault from "./pages/Vault";
+import Anime from "./pages/Anime";
 import Exhibition from "./pages/Exhibition";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const AnimatedRoutes = () => {
           <Route path="/journal" element={<Journal />} />
           <Route path="/movies" element={<Movies />} />
           <Route path="/books" element={<Books />} />
+          <Route path="/anime" element={<Anime />} />
           <Route path="/sketches" element={<Sketch />} />
           <Route path="/songs" element={<Songs />} />
           <Route path="/scrapbook" element={<Scrapbook />} />

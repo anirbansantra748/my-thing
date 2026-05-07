@@ -163,6 +163,26 @@ const VaultSchema = new mongoose.Schema({
 });
 VaultSchema.index({ id: 1, userId: 1 }, { unique: true });
 
+const AnimeSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  userId: { type: String, required: true },
+  title: { type: String, required: true },
+  status: { type: String, default: 'watching' }, // watching, completed, planned, dropped
+  seasonsWatched: { type: Number, default: 0 },
+  totalSeasons: { type: Number, default: 0 },
+  rating: { type: Number, default: 0 },
+  cover: String,
+  notes: String,
+  season: String,
+  year: String,
+  isPinned: { type: Boolean, default: false },
+  isMasterpiece: { type: Boolean, default: false },
+  themeSongUrl: String,
+  createdAt: Number,
+  updatedAt: Number
+});
+AnimeSchema.index({ id: 1, userId: 1 }, { unique: true });
+
 const PhotoSchema = new mongoose.Schema({
   id: { type: String, required: true },
   userId: { type: String, required: true },
@@ -185,6 +205,7 @@ const Song = mongoose.model('Song', SongSchema);
 const Album = mongoose.model('Album', AlbumSchema);
 const Vault = mongoose.model('Vault', VaultSchema);
 const Photo = mongoose.model('Photo', PhotoSchema);
+const Anime = mongoose.model('Anime', AnimeSchema);
 
 // Auth Endpoints
 app.post('/api/auth/register', async (req, res) => {
@@ -261,6 +282,7 @@ setupCRUD('songs', Song);
 setupCRUD('albums', Album);
 setupCRUD('vault', Vault);
 setupCRUD('photos', Photo);
+setupCRUD('anime', Anime);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

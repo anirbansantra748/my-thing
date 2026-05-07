@@ -59,16 +59,23 @@ export type PhotoEntry = {
   id: string; userId: string; title?: string; image: string; moment?: string; location?: string; createdAt: number; updatedAt: number;
 };
 
+export type AnimeEntry = {
+  id: string; userId: string; title: string; status: "watching" | "completed" | "planned" | "dropped"; 
+  seasonsWatched: number; totalSeasons: number; rating: number; cover?: string; notes: string; 
+  season?: string; year?: string; isMasterpiece?: boolean; isPinned?: boolean;
+  themeSongUrl?: string; createdAt: number; updatedAt: number;
+};
+
 const KEY = "muse:store:v2";
 const AUTH_KEY = "muse:auth:v1";
 export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 type Store = {
   canvases: CanvasDoc[]; journal: JournalEntry[]; movies: MovieEntry[]; books: BookEntry[]; sketches: SketchDoc[]; songs: SongEntry[]; albums: AlbumEntry[];
-  vault: VaultEntry[]; photos: PhotoEntry[];
+  vault: VaultEntry[]; photos: PhotoEntry[]; anime: AnimeEntry[];
 };
 
-const empty: Store = { canvases: [], journal: [], movies: [], books: [], sketches: [], songs: [], albums: [], vault: [], photos: [] };
+const empty: Store = { canvases: [], journal: [], movies: [], books: [], sketches: [], songs: [], albums: [], vault: [], photos: [], anime: [] };
 
 // Memory cache for synchronous access
 let memoryStore: Store = empty;
@@ -158,6 +165,7 @@ function write(s: Store) {
     if (light.journal) light.journal = s.journal.map(j => ({ date: j.date, mood: j.mood, updatedAt: j.updatedAt }));
     if (light.vault) light.vault = s.vault.map(v => ({ id: v.id, title: v.title, category: v.category, updatedAt: v.updatedAt, isPinned: v.isPinned }));
     if (light.photos) light.photos = s.photos.map(p => ({ id: p.id, moment: p.moment, updatedAt: p.updatedAt }));
+    if (light.anime) light.anime = s.anime.map(a => ({ id: a.id, title: a.title, status: a.status, updatedAt: a.updatedAt, isPinned: a.isPinned }));
     localStorage.setItem(KEY, JSON.stringify(light));
   } catch (e) {
     // If it fails, we don't care, IDB has it.
@@ -234,9 +242,14 @@ export function useStore<K extends keyof Store>(key: K): [Store[K], (v: Store[K]
             local.forEach((l: any) => {
                const id = l.id || l.date;
                if (!merged.find((m: any) => (m.id || m.date) === id)) {
-                  merged.push(l);
-                  syncWithAPI(key, [l], []);
-                  migratedCount++;
+                  // Only migrate if cloud is empty (first sync) OR if item is very new (offline edit)
+                  // This prevents deleted items on other devices from being resurrected
+                  const isVeryNew = Date.now() - (l.updatedAt || 0) < 1000 * 60 * 60 * 24; // 24 hours
+                  if (data.length === 0 || isVeryNew) {
+                    merged.push(l);
+                    syncWithAPI(key, [l], []);
+                    migratedCount++;
+                  }
                }
             });
 

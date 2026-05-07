@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Home, PenTool, Book, Film, BookOpen, Music, Shield, Camera } from 'lucide-react';
+import { Home, PenTool, Book, Film, BookOpen, Music, Shield, Camera, Tv } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 type IconComponentType = React.ElementType<{ className?: string }>;
@@ -11,8 +11,7 @@ export interface InteractiveMenuItem {
 
 const menuItems: InteractiveMenuItem[] = [
     { label: 'Home', icon: Home, to: '/' },
-    { label: 'Poems', icon: Book, to: '/poems' },
-    { label: 'Sketch', icon: PenTool, to: '/sketches' },
+    { label: 'Anime', icon: Tv, to: '/anime' },
     { label: 'Journal', icon: BookOpen, to: '/journal' },
     { label: 'Vault', icon: Shield, to: '/vault' },
     { label: 'Gallery', icon: Camera, to: '/exhibition' },

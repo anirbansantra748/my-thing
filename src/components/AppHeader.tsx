@@ -7,6 +7,7 @@ import { exportStore, getAuth, setAuth, User } from "@/lib/store";
 const links = [
   { to: "/", label: "Home" },
   { to: "/poems", label: "Poems" },
+  { to: "/anime", label: "Anime" },
   { to: "/sketches", label: "Sketch" },
   { to: "/journal", label: "Journal" },
   { to: "/movies", label: "Movies" },
