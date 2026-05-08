@@ -354,7 +354,9 @@ export default function Home() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-plum/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex flex-col justify-end p-6">
                     <div className="text-[10px] font-black text-white uppercase tracking-widest mb-1">{a.title}</div>
-                    <div className="text-[8px] font-black text-white/60 uppercase tracking-[0.2em]">{a.episodesWatched}/{a.totalEpisodes || '?'} Episodes</div>
+                    <div className="text-[8px] font-black text-white/60 uppercase tracking-[0.2em]">
+                      {a.seasonsWatched !== undefined ? `${a.seasonsWatched}/${a.totalSeasons || '?'}` : `${a.episodesWatched || 0}/${a.totalEpisodes || '?'}`} {a.seasonsWatched !== undefined ? 'Seasons' : 'Episodes'}
+                    </div>
                   </div>
                 </Link>
               ))}

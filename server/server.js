@@ -170,6 +170,8 @@ const AnimeSchema = new mongoose.Schema({
   status: { type: String, default: 'watching' }, // watching, completed, planned, dropped
   seasonsWatched: { type: Number, default: 0 },
   totalSeasons: { type: Number, default: 0 },
+  episodesWatched: { type: Number, default: 0 }, // Backwards compatibility
+  totalEpisodes: { type: Number, default: 0 },   // Backwards compatibility
   rating: { type: Number, default: 0 },
   cover: String,
   notes: String,
@@ -246,9 +248,19 @@ const setupCRUD = (route, Model, idField = 'id') => {
   app.post(`/api/${route}`, async (req, res) => {
     try {
       const userId = req.headers['x-user-id'];
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      if (!userId) {
+        console.warn(`[API] POST /api/${route} failed: No x-user-id header`);
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
       
       const id = req.body[idField];
+      if (!id) {
+        console.warn(`[API] POST /api/${route} failed: No ${idField} in body`);
+        return res.status(400).json({ error: `Missing ${idField}` });
+      }
+
+      console.log(`[API] Syncing ${route} item: ${id} for user: ${userId}`);
+      
       const item = await Model.findOneAndUpdate(
         { [idField]: id, userId },
         { ...req.body, userId },
@@ -256,6 +268,7 @@ const setupCRUD = (route, Model, idField = 'id') => {
       );
       res.json(item);
     } catch (err) {
+      console.error(`[API] POST /api/${route} error:`, err.message);
       res.status(500).json({ error: err.message });
     }
   });

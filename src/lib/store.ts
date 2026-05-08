@@ -61,7 +61,9 @@ export type PhotoEntry = {
 
 export type AnimeEntry = {
   id: string; userId: string; title: string; status: "watching" | "completed" | "planned" | "dropped"; 
-  seasonsWatched: number; totalSeasons: number; rating: number; cover?: string; notes: string; 
+  seasonsWatched: number; totalSeasons: number; 
+  episodesWatched?: number; totalEpisodes?: number; // Added for compatibility
+  rating: number; cover?: string; notes: string; 
   season?: string; year?: string; isMasterpiece?: boolean; isPinned?: boolean;
   themeSongUrl?: string; createdAt: number; updatedAt: number;
 };
@@ -192,19 +194,26 @@ async function syncWithAPI(key: string, next: any[], prev: any[]) {
 
   try {
     for (const item of next) {
-      const id = item.id || item.date;
-      const prevItem = prev.find(p => (p.id || p.date) === id);
-      if (!prevItem || JSON.stringify(prevItem) !== JSON.stringify(item)) {
+      // Ensure item has an ID and UserID before syncing
+      const id = item.id || item.date || uid();
+      const updatedItem = { ...item, id: item.id || id, userId: user.id };
+      
+      const idSearch = item.id || item.date;
+      const prevItem = prev.find(p => (p.id || p.date) === idSearch);
+      
+      if (!prevItem || JSON.stringify(prevItem) !== JSON.stringify(updatedItem)) {
+        console.log(`[Store] Syncing ${key}/${id} to cloud...`);
         await fetch(`${API_BASE}/${key}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-          body: JSON.stringify({ ...item, userId: user.id })
+          body: JSON.stringify(updatedItem)
         });
       }
     }
     for (const item of prev) {
       const id = item.id || item.date;
-      if (!next.find(n => (n.id || n.date) === id)) {
+      if (id && !next.find(n => (n.id || n.date) === id)) {
+        console.log(`[Store] Deleting ${key}/${id} from cloud...`);
         await fetch(`${API_BASE}/${key}/${id}`, {
           method: 'DELETE',
           headers: { 'x-user-id': user.id }
