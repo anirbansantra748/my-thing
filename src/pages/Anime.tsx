@@ -100,8 +100,8 @@ export default function Anime() {
                </div>
             </div>
 
-            <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[auto_1fr_320px] gap-12 px-6 md:px-10 pb-12 items-center lg:items-end">
-               <div className="w-[180px] md:w-[260px] aspect-[2/3] rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group-hover:-translate-y-2 transition-all duration-700 relative shrink-0">
+            <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[auto_1fr_320px] gap-8 md:gap-12 px-6 md:px-10 pb-12 items-center lg:items-end">
+               <div className="w-[200px] md:w-[260px] aspect-[2/3] rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group-hover:-translate-y-2 transition-all duration-700 relative shrink-0">
                   {selected?.cover ? (
                      <img src={selected.cover} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -124,7 +124,7 @@ export default function Anime() {
                         <StarRating value={selected?.rating || 0} size={10} />
                         {selected?.isPinned && <div className="px-3 py-1 rounded-lg bg-primary/20 text-[9px] font-black text-primary uppercase tracking-widest border border-primary/20">Featured</div>}
                      </div>
-                     <h2 className="font-display text-5xl md:text-8xl font-black text-white tracking-tighter leading-none drop-shadow-2xl">
+                     <h2 className="font-display text-4xl md:text-8xl font-black text-white tracking-tighter leading-tight md:leading-none drop-shadow-2xl">
                         {selected?.title}
                      </h2>
                   </div>
@@ -162,19 +162,21 @@ export default function Anime() {
                   </div>
                   
                   {/* Sound Wave Animation */}
-                  <AnimatePresence>
-                    {isPlaying && (
-                      <motion.div 
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                        className="flex items-end gap-1 h-8 px-4 py-2 rounded-full bg-white/5 border border-white/10 w-fit"
-                      >
-                         {[...Array(6)].map((_, i) => (
-                           <div key={i} className="w-1 bg-primary rounded-full animate-visualizer" style={{ animationDelay: `${i * 0.1}s`, height: '100%' }} />
-                         ))}
-                         <span className="text-[9px] font-black uppercase tracking-widest text-white/60 ml-2">Atmosphere Active</span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div className="flex justify-center lg:justify-start">
+                     <AnimatePresence>
+                       {isPlaying && (
+                         <motion.div 
+                           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                           className="flex items-end gap-1 h-10 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 w-fit backdrop-blur-md"
+                         >
+                            {[...Array(6)].map((_, i) => (
+                              <div key={i} className="w-1 bg-primary rounded-full animate-visualizer" style={{ animationDelay: `${i * 0.1}s`, height: '100%' }} />
+                            ))}
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-3">Atmosphere Active</span>
+                         </motion.div>
+                       )}
+                     </AnimatePresence>
+                  </div>
                </div>
 
                {/* Seasons Sidebar */}
@@ -213,24 +215,24 @@ export default function Anime() {
       </section>
 
       {/* 2. Compact Grid */}
-      <section className="px-10 mt-20">
-         <div className="flex items-center justify-between mb-12">
-            <h3 className="font-display text-4xl font-bold text-plum tracking-tight">The Library</h3>
-            <div className="relative w-72">
+      <section className="px-6 md:px-10 mt-12 md:mt-20">
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <h3 className="font-display text-3xl md:text-4xl font-bold text-plum tracking-tight">The Library</h3>
+            <div className="relative w-full md:w-72">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-olive/20" />
-               <input placeholder="Find series..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-12 pl-12 pr-6 rounded-full bg-black/5 border-0 text-xs outline-none" />
+               <input placeholder="Find series..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-12 md:h-14 pl-12 pr-6 rounded-2xl md:rounded-full bg-black/5 border-0 text-xs outline-none focus:ring-1 ring-primary/20 transition-all" />
             </div>
          </div>
 
-         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-8">
+         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-8">
             {filteredCollection.map((a) => (
-               <button key={a.id} onClick={() => setSelectedId(a.id)} className={`group flex flex-col text-left transition-all duration-500 ${selectedId === a.id ? "scale-105" : ""}`}>
-                  <div className={`relative aspect-[2/3] rounded-[2rem] overflow-hidden bg-black/5 transition-all shadow-sm group-hover:shadow-2xl ${selectedId === a.id ? "ring-[6px] ring-primary ring-offset-8" : ""}`}>
+               <button key={a.id} onClick={() => setSelectedId(a.id)} className={`group flex flex-col text-left transition-all duration-500 ${selectedId === a.id ? "scale-[1.02]" : ""}`}>
+                  <div className={`relative aspect-[2/3] rounded-2xl md:rounded-[2rem] overflow-hidden bg-black/5 transition-all shadow-sm group-hover:shadow-2xl ${selectedId === a.id ? "ring-[4px] md:ring-[6px] ring-primary ring-offset-4 md:ring-offset-8" : ""}`}>
                      {a.cover ? <img src={a.cover} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" /> : <div className="w-full h-full flex items-center justify-center opacity-10"><Tv className="w-12 h-12" /></div>}
                   </div>
-                  <div className="mt-6 px-1">
-                     <h4 className={`font-black text-xs truncate transition-colors ${selectedId === a.id ? "text-primary" : "text-plum group-hover:text-primary"}`}>{a.title}</h4>
-                     <p className="text-[9px] font-black text-olive/30 uppercase tracking-widest mt-1">{a.year} · {a.seasonsWatched}/{a.totalSeasons}S</p>
+                  <div className="mt-4 md:mt-6 px-1">
+                     <h4 className={`font-black text-[10px] md:text-xs truncate transition-colors ${selectedId === a.id ? "text-primary" : "text-plum group-hover:text-primary"}`}>{a.title}</h4>
+                     <p className="text-[8px] md:text-[9px] font-black text-olive/30 uppercase tracking-widest mt-0.5 md:mt-1">{a.year} · {a.seasonsWatched}/{a.totalSeasons}S</p>
                   </div>
                </button>
             ))}

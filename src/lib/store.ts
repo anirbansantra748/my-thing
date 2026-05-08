@@ -159,15 +159,15 @@ function write(s: Store) {
   try {
     // Only save essential metadata to LS to prevent quota errors
     const light: any = { ...s };
-    if (light.canvases) light.canvases = s.canvases.map(c => ({ id: c.id, title: c.title, kind: c.kind, updatedAt: c.updatedAt, isPinned: c.isPinned })); 
-    if (light.sketches) light.sketches = s.sketches.map(sk => ({ id: sk.id, title: sk.title, updatedAt: sk.updatedAt, isPinned: sk.isPinned }));
-    if (light.movies) light.movies = s.movies.map(m => ({ id: m.id, title: m.title, updatedAt: m.updatedAt, status: m.status, isPinned: m.isPinned }));
-    if (light.books) light.books = s.books.map(b => ({ id: b.id, title: b.title, updatedAt: b.updatedAt, status: b.status, isPinned: b.isPinned }));
-    if (light.songs) light.songs = s.songs.map(so => ({ id: so.id, title: so.title, updatedAt: so.updatedAt, isPinned: so.isPinned }));
-    if (light.journal) light.journal = s.journal.map(j => ({ date: j.date, mood: j.mood, updatedAt: j.updatedAt }));
-    if (light.vault) light.vault = s.vault.map(v => ({ id: v.id, title: v.title, category: v.category, updatedAt: v.updatedAt, isPinned: v.isPinned }));
-    if (light.photos) light.photos = s.photos.map(p => ({ id: p.id, moment: p.moment, updatedAt: p.updatedAt }));
-    if (light.anime) light.anime = s.anime.map(a => ({ id: a.id, title: a.title, status: a.status, updatedAt: a.updatedAt, isPinned: a.isPinned }));
+    if (light.canvases) light.canvases = s.canvases.map(c => ({ id: c.id, title: c.title, kind: c.kind, updatedAt: c.updatedAt, isPinned: c.isPinned, cover: c.cover, category: c.category })); 
+    if (light.sketches) light.sketches = s.sketches.map(sk => ({ id: sk.id, title: sk.title, updatedAt: sk.updatedAt, isPinned: sk.isPinned, cover: sk.cover, category: sk.category }));
+    if (light.movies) light.movies = s.movies.map(m => ({ ...m }));
+    if (light.books) light.books = s.books.map(b => ({ ...b }));
+    if (light.songs) light.songs = s.songs.map(so => ({ ...so }));
+    if (light.journal) light.journal = s.journal.map(j => ({ ...j }));
+    if (light.vault) light.vault = s.vault.map(v => ({ ...v }));
+    if (light.photos) light.photos = s.photos.map(p => ({ ...p }));
+    if (light.anime) light.anime = s.anime.map(a => ({ ...a }));
     localStorage.setItem(KEY, JSON.stringify(light));
   } catch (e) {
     // If it fails, we don't care, IDB has it.

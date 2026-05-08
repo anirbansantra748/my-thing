@@ -49,7 +49,7 @@ export default function Vault() {
     setItems(items.map(i => i.id === id ? { ...i, isPinned: !i.isPinned } : i));
   };
 
-  const isPdf = (data: string) => data.startsWith("data:application/pdf");
+  const isPdf = (data?: string) => typeof data === 'string' && data.startsWith("data:application/pdf");
 
   return (
     <PageTransition>
