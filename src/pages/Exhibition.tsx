@@ -141,7 +141,7 @@ export default function Exhibition() {
 
       {/* Lightbox */}
       {viewing && (
-        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-3xl animate-in fade-in duration-500 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] bg-white animate-in fade-in duration-500 overflow-y-auto overflow-x-hidden">
           <div className="min-h-screen flex flex-col p-6 md:p-12 relative">
             
             {/* Close & Actions */}
@@ -161,7 +161,7 @@ export default function Exhibition() {
             </div>
 
             {/* Main Carousel View */}
-            <div className="flex-1 grid lg:grid-cols-[1fr_400px] gap-12 items-center relative">
+            <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[1fr_400px] gap-8 md:gap-12 items-center relative">
               
               {/* Navigation Arrows */}
               <button 
@@ -177,16 +177,16 @@ export default function Exhibition() {
                 <ChevronRight className="w-8 h-8" />
               </button>
 
-              <div className="relative group flex items-center justify-center h-full max-h-[85vh]">
+              <div className="relative group flex items-center justify-center w-full min-h-[300px] max-h-[60vh] lg:max-h-[85vh]">
                 <img 
                   key={viewing.id}
                   src={viewing.image} 
-                  alt={viewing.title} 
-                  className="max-w-full max-h-full object-contain rounded-[3rem] shadow-[0_80px_120px_rgba(0,0,0,0.15)] animate-in zoom-in-95 fade-in duration-500"
+                  alt={viewing.title || ""} 
+                  className="max-w-full max-h-full object-contain rounded-3xl lg:rounded-[3rem] shadow-2xl lg:shadow-[0_80px_120px_rgba(0,0,0,0.15)] animate-in zoom-in-95 fade-in duration-500"
                 />
               </div>
 
-              <div className="space-y-10 animate-in slide-in-from-right-8 duration-700">
+              <div className="w-full space-y-8 md:space-y-10 animate-in slide-in-from-bottom-8 lg:slide-in-from-right-8 duration-700">
                 <div>
                   <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-plum/40 mb-4">
                     <Sparkles className="w-4 h-4 text-plum" /> Studio Selection

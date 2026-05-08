@@ -100,8 +100,8 @@ export default function Anime() {
                </div>
             </div>
 
-            <div className="flex-1 grid lg:grid-cols-[auto_1fr_320px] gap-12 px-10 pb-12 items-end">
-               <div className="hidden md:block w-[260px] aspect-[2/3] rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group-hover:-translate-y-2 transition-all duration-700 relative">
+            <div className="flex-1 flex flex-col lg:grid lg:grid-cols-[auto_1fr_320px] gap-12 px-6 md:px-10 pb-12 items-center lg:items-end">
+               <div className="w-[180px] md:w-[260px] aspect-[2/3] rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 group-hover:-translate-y-2 transition-all duration-700 relative shrink-0">
                   {selected?.cover ? (
                      <img src={selected.cover} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -115,9 +115,9 @@ export default function Anime() {
                   )}
                </div>
 
-               <div className="space-y-8 pb-4">
+               <div className="space-y-6 md:space-y-8 pb-4 text-center lg:text-left w-full">
                   <div className="space-y-4">
-                     <div className="flex items-center gap-3">
+                     <div className="flex items-center justify-center lg:justify-start gap-3">
                         <div className="px-3 py-1 rounded-lg bg-white/10 text-[9px] font-black text-white uppercase tracking-widest border border-white/10">
                            {selected?.year || "2024"}
                         </div>
@@ -129,7 +129,7 @@ export default function Anime() {
                      </h2>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                      {ytId ? (
                         <button 
                            onClick={() => setIsPlaying(!isPlaying)}
@@ -178,7 +178,7 @@ export default function Anime() {
                </div>
 
                {/* Seasons Sidebar */}
-               <div className="bg-black/30 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 p-8 flex flex-col h-full max-h-[450px] shadow-2xl">
+               <div className="w-full max-w-[320px] bg-black/30 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 p-8 flex flex-col h-full lg:max-h-[450px] shadow-2xl">
                   <div className="flex items-center justify-between mb-8">
                      <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Seasons Log</span>
                      <span className="text-[10px] font-black text-primary uppercase tracking-widest">{selected?.seasonsWatched}/{selected?.totalSeasons}</span>
@@ -237,7 +237,12 @@ export default function Anime() {
          </div>
       </section>
 
-      {editing && <AnimeDialog entry={editing} onClose={() => setEditing(null)} onSave={save} onDelete={(id) => { setAnime(anime.filter(x => x.id !== id)); setEditing(null); }} />}
+      {editing && <AnimeDialog entry={editing} onClose={() => setEditing(null)} onSave={save} onDelete={(id) => { 
+        const updated = anime.filter(x => x.id !== id);
+        setAnime(updated); 
+        setEditing(null); 
+        if (selectedId === id) setSelectedId(updated[0]?.id || null);
+      }} />}
     </div>
   );
 }
@@ -269,7 +274,7 @@ function AnimeDialog({ entry, onClose, onSave, onDelete }: {
               <div className="space-y-4">
                  <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase tracking-widest text-olive/30 ml-1">Cover Link</label>
-                    <input placeholder="https://..." value={a.cover && !a.cover.startsWith('data:') ? a.cover : ""} onChange={(e) => setA({ ...a, cover: e.target.value })} className="w-full bg-black/5 border-0 rounded-xl p-4 text-xs outline-none" />
+                    <input placeholder="https://..." value={(a.cover && typeof a.cover === 'string' && !a.cover.startsWith('data:')) ? a.cover : ""} onChange={(e) => setA({ ...a, cover: e.target.value })} className="w-full bg-black/5 border-0 rounded-xl p-4 text-xs outline-none" />
                  </div>
                  <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase tracking-widest text-olive/30 ml-1">Theme (YouTube)</label>

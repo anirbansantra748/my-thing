@@ -299,7 +299,7 @@ function MovieDialog({ entry, onClose, onSave, onDelete }: {
              <label className="text-[10px] font-black uppercase tracking-widest text-olive/40 ml-1">Cover Link</label>
              <input 
                placeholder="https://..." 
-               value={m.cover && !m.cover.startsWith('data:') ? m.cover : ""} 
+               value={(m.cover && typeof m.cover === 'string' && !m.cover.startsWith('data:')) ? m.cover : ""} 
                onChange={(e) => setM({ ...m, cover: e.target.value })}
                className="w-full rounded-xl bg-black/5 border-0 px-4 py-2.5 text-xs text-olive" 
              />

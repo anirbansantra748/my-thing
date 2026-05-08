@@ -278,9 +278,14 @@ const setupCRUD = (route, Model, idField = 'id') => {
       const userId = req.headers['x-user-id'];
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
       
-      await Model.findOneAndDelete({ [idField]: req.params.id, userId });
+      const query = { userId, $or: [{ [idField]: req.params.id }] };
+      if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+        query.$or.push({ _id: req.params.id });
+      }
+      await Model.findOneAndDelete(query);
       res.json({ success: true });
     } catch (err) {
+      console.error(`[API] DELETE /api/${route}/${req.params.id} error:`, err.message);
       res.status(500).json({ error: err.message });
     }
   });
